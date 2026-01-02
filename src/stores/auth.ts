@@ -1,0 +1,105 @@
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import type { User, LoginCredentials, RegisterData } from '@/types';
+import { authService } from '@/services/auth.service';
+import { TOKEN_KEY, USER_KEY } from '@/utils/constants';
+import router from '@/router';
+
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref<User | null>(null);
+  const token = ref<string | null>(null);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+
+  const isAuthenticated = computed(() => !!token.value && !!user.value);
+
+  // Initialize from localStorage
+  function initialize() {
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+    const storedUser = localStorage.getItem(USER_KEY);
+
+    if (storedToken && storedUser) {
+      token.value = storedToken;
+      user.value = JSON.parse(storedUser);
+    }
+  }
+
+  async function login(credentials: LoginCredentials) {
+    try {
+      loading.value = true;
+      error.value = null;
+
+      const response = await authService.login(credentials);
+
+      token.value = response.token;
+      user.value = response.user;
+
+      localStorage.setItem(TOKEN_KEY, response.token);
+      localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+
+      router.push('/dashboard');
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Login failed';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function register(userData: RegisterData) {
+    try {
+      loading.value = true;
+      error.value = null;
+
+      const response = await authService.register(userData);
+
+      token.value = response.token;
+      user.value = response.user;
+
+      localStorage.setItem(TOKEN_KEY, response.token);
+      localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+
+      router.push('/dashboard');
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Registration failed';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function fetchUser() {
+    try {
+      const response = await authService.me();
+      user.value = response.user;
+      localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+    } catch (err) {
+      logout();
+    }
+  }
+
+  function logout() {
+    authService.logout().catch(() => {});
+    
+    token.value = null;
+    user.value = null;
+    
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    
+    router.push('/login');
+  }
+
+  return {
+    user,
+    token,
+    loading,
+    error,
+    isAuthenticated,
+    initialize,
+    login,
+    register,
+    fetchUser,
+    logout,
+  };
+});

@@ -1,9 +1,17 @@
-<script setup lang="ts">
-import { Button } from '@/components/ui/button'
-</script>
-
 <template>
-  <Button>Shadcn Button</Button>
+  <RouterView />
 </template>
 
-<style scoped></style>
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import { useAuthStore } from './stores/auth';
+import { useThemeStore } from './stores/theme';
+
+const authStore = useAuthStore();
+const themeStore = useThemeStore();
+
+onMounted(() => {
+  authStore.initialize();
+  themeStore.initialize();
+});
+</script>
