@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { User, LoginCredentials, RegisterData } from '@/types';
+import type { User, LoginCredentials, RegisterData, ApiError } from '@/types';
 import { authService } from '@/services/auth.service';
 import { TOKEN_KEY, USER_KEY } from '@/utils/constants';
 import router from '@/router';
@@ -10,6 +10,7 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const validationErrors = ref<Record<string, string[]>>({});
 
   const isAuthenticated = computed(() => !!token.value && !!user.value);
 
@@ -28,6 +29,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       loading.value = true;
       error.value = null;
+      validationErrors.value = {};
 
       const response = await authService.login(credentials);
 
@@ -39,7 +41,15 @@ export const useAuthStore = defineStore('auth', () => {
 
       router.push('/dashboard');
     } catch (err: any) {
-      error.value = err.response?.data?.message || 'Login failed';
+      const apiError = err.response?.data as ApiError;
+      
+      if (apiError?.errors) {
+        // Laravel validation errors
+        validationErrors.value = apiError.errors;
+        error.value = apiError.message || 'Validation failed';
+      } else {
+        error.value = apiError?.message || err.message || 'Login failed';
+      }
       throw err;
     } finally {
       loading.value = false;
@@ -50,6 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       loading.value = true;
       error.value = null;
+      validationErrors.value = {};
 
       const response = await authService.register(userData);
 
@@ -61,7 +72,15 @@ export const useAuthStore = defineStore('auth', () => {
 
       router.push('/dashboard');
     } catch (err: any) {
-      error.value = err.response?.data?.message || 'Registration failed';
+      const apiError = err.response?.data as ApiError;
+      
+      if (apiError?.errors) {
+        // Laravel validation errors
+        validationErrors.value = apiError.errors;
+        error.value = apiError.message || 'Validation failed';
+      } else {
+        error.value = apiError?.message || err.message || 'Registration failed';
+      }
       throw err;
     } finally {
       loading.value = false;
@@ -90,16 +109,23 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/login');
   }
 
+  function clearErrors() {
+    error.value = null;
+    validationErrors.value = {};
+  }
+
   return {
     user,
     token,
     loading,
     error,
+    validationErrors,
     isAuthenticated,
     initialize,
     login,
     register,
     fetchUser,
     logout,
+    clearErrors,
   };
 });

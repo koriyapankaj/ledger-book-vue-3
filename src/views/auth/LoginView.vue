@@ -9,30 +9,44 @@
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form @submit.prevent="handleLogin" class="space-y-4">
-                        <div class="space-y-2">
-                            <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" placeholder="john@example.com"
-                                required />
+                    <Form @submit="handleLogin" :validation-schema="loginSchema">
+                        <div class="space-y-4">
+                            <FormField name="email" label="Email">
+                                <template #default="{ field, errorMessage }">
+                                    <Input id="email" type="email" placeholder="john@example.com" v-bind="field"
+                                        :class="{ 'border-destructive': errorMessage || authStore.validationErrors.email }" />
+                                    <p v-if="authStore.validationErrors.email"
+                                        class="text-sm font-medium text-destructive">
+                                        {{ authStore.validationErrors.email[0] }}
+                                    </p>
+                                </template>
+                            </FormField>
+
+                            <FormField name="password" label="Password">
+                                <template #default="{ field, errorMessage }">
+                                    <Input id="password" type="password" v-bind="field"
+                                        :class="{ 'border-destructive': errorMessage || authStore.validationErrors.password }" />
+                                    <p v-if="authStore.validationErrors.password"
+                                        class="text-sm font-medium text-destructive">
+                                        {{ authStore.validationErrors.password[0] }}
+                                    </p>
+                                </template>
+                            </FormField>
+
+                            <Alert v-if="authStore.error && !Object.keys(authStore.validationErrors).length"
+                                variant="destructive">
+                                <AlertCircle class="h-4 w-4" />
+                                <AlertDescription>
+                                    {{ authStore.error }}
+                                </AlertDescription>
+                            </Alert>
+
+                            <Button type="submit" class="w-full" :disabled="authStore.loading">
+                                <Loader2 v-if="authStore.loading" class="mr-2 h-4 w-4 animate-spin" />
+                                {{ authStore.loading ? 'Signing in...' : 'Sign in' }}
+                            </Button>
                         </div>
-
-                        <div class="space-y-2">
-                            <Label for="password">Password</Label>
-                            <Input id="password" v-model="form.password" type="password" required />
-                        </div>
-
-                        <Alert v-if="authStore.error" variant="destructive">
-                            <AlertCircle class="h-4 w-4" />
-                            <AlertDescription>
-                                {{ authStore.error }}
-                            </AlertDescription>
-                        </Alert>
-
-                        <Button type="submit" class="w-full" :disabled="authStore.loading">
-                            <Loader2 v-if="authStore.loading" class="mr-2 h-4 w-4 animate-spin" />
-                            {{ authStore.loading ? 'Signing in...' : 'Sign in' }}
-                        </Button>
-                    </form>
+                    </Form>
 
                     <div class="mt-4 text-center text-sm">
                         Don't have an account?
@@ -47,24 +61,43 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { onMounted } from 'vue';
 import { AlertCircle, Loader2 } from 'lucide-vue-next';
+import { Form } from 'vee-validate';
+import * as yup from 'yup';
 import GuestLayout from '@/layouts/GuestLayout.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FormField } from '@/components/ui/form';
 import { useAuthStore } from '@/stores/auth';
+import type { LoginCredentials } from '@/types';
 
 const authStore = useAuthStore();
 
-const form = reactive({
-    email: '',
-    password: '',
+// Validation schema
+const loginSchema = yup.object({
+    email: yup
+        .string()
+        .required('Email is required')
+        .email('Please enter a valid email address'),
+    password: yup
+        .string()
+        .required('Password is required')
+        .min(6, 'Password must be at least 6 characters'),
 });
 
-const handleLogin = async () => {
-    await authStore.login(form);
+const handleLogin = async (values: any) => {
+    try {
+        await authStore.login(values as LoginCredentials);
+    } catch (error) {
+        // Error is already handled in the store
+        console.error('Login failed:', error);
+    }
 };
+
+onMounted(() => {
+    authStore.clearErrors();
+});
 </script>
