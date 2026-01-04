@@ -1,11 +1,11 @@
 <template>
     <aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] border-r bg-background transition-all duration-300 z-40"
-        :class="isCollapsed ? 'w-16' : 'w-64'">
+        :class="sidebarStore.isCollapsed ? 'w-16' : 'w-64'">
         <div class="flex h-full flex-col">
             <!-- Toggle Button -->
             <div class="flex items-center justify-end p-4">
-                <Button variant="ghost" size="icon" @click="$emit('toggle')">
-                    <ChevronLeft v-if="!isCollapsed" class="h-4 w-4" />
+                <Button variant="ghost" size="icon" @click="sidebarStore.toggle()">
+                    <ChevronLeft v-if="!sidebarStore.isCollapsed" class="h-4 w-4" />
                     <ChevronRight v-else class="h-4 w-4" />
                 </Button>
             </div>
@@ -20,13 +20,13 @@
                                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                         ]">
                         <component :is="item.icon" class="h-5 w-5 flex-shrink-0" />
-                        <span v-if="!isCollapsed">{{ item.name }}</span>
+                        <span v-if="!sidebarStore.isCollapsed">{{ item.name }}</span>
                     </div>
                 </router-link>
             </nav>
 
             <!-- Financial Summary (when expanded) -->
-            <div v-if="!isCollapsed && authStore.user" class="border-t p-4 space-y-2">
+            <div v-if="!sidebarStore.isCollapsed && authStore.user" class="border-t p-4 space-y-2">
                 <p class="text-xs font-semibold text-muted-foreground">FINANCIAL SUMMARY</p>
                 <div class="space-y-1 text-sm">
                     <div class="flex justify-between">
@@ -63,20 +63,15 @@ import {
     Users,
     ChevronLeft,
     ChevronRight,
+    Target,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useAuthStore } from '@/stores/auth';
-
-defineProps<{
-    isCollapsed: boolean;
-}>();
-
-defineEmits<{
-    toggle: [];
-}>();
+import { useSidebarStore } from '@/stores/sidebar';
 
 const authStore = useAuthStore();
+const sidebarStore = useSidebarStore();
 
 const navigation = [
     {
@@ -103,6 +98,11 @@ const navigation = [
         name: 'Contacts',
         path: '/contacts',
         icon: Users,
+    },
+    {
+        name: 'Budgets',
+        path: '/budgets',
+        icon: Target,
     },
 ];
 

@@ -3,9 +3,9 @@
         <Header />
 
         <div class="flex">
-            <Sidebar :is-collapsed="isSidebarCollapsed" @toggle="toggleSidebar" />
+            <Sidebar />
 
-            <main class="flex-1 transition-all duration-300" :class="isSidebarCollapsed ? 'ml-16' : 'ml-64'">
+            <main class="flex-1 transition-all duration-300" :class="sidebarStore.isCollapsed ? 'ml-16' : 'ml-64'">
                 <div class="container mx-auto px-4 py-6">
                     <slot />
                 </div>
@@ -15,13 +15,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import Header from '@/components/common/Header.vue';
 import Sidebar from '@/components/common/Sidebar.vue';
+import { useSidebarStore } from '@/stores/sidebar';
 
-const isSidebarCollapsed = ref(false);
+const sidebarStore = useSidebarStore();
 
-const toggleSidebar = () => {
-    isSidebarCollapsed.value = !isSidebarCollapsed.value;
-};
+onMounted(() => {
+    sidebarStore.initialize();
+});
 </script>
