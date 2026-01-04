@@ -36,7 +36,8 @@ class ApiService {
         if (error.response?.status === 401) {
           // Unauthorized - clear auth and redirect to login
           const authStore = useAuthStore();
-          authStore.logout();
+          
+          authStore.clearAuth(); 
           router.push('/login');
         }
         return Promise.reject(error);

@@ -97,16 +97,23 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function logout() {
-    authService.logout().catch(() => {});
-    
+  async function logout() {
+    try {
+      await authService.logout();
+    } catch {
+      // Ignore API errors (token may already be invalid)
+    } finally {
+      clearAuth();
+      router.push('/login');
+    }
+  }
+
+  function clearAuth() {
     token.value = null;
     user.value = null;
-    
+
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-    
-    router.push('/login');
   }
 
   function clearErrors() {
@@ -127,5 +134,6 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUser,
     logout,
     clearErrors,
+    clearAuth,
   };
 });
