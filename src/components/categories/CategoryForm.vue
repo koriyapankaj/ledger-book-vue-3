@@ -26,7 +26,7 @@
                         <SelectValue placeholder="None (Top-level category)" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem :value="null">None</SelectItem>
                         <SelectItem v-for="parentCat in parentCategories" :key="parentCat.id"
                             :value="parentCat.id.toString()">
                             {{ parentCat.name }}
@@ -150,7 +150,7 @@ const submitting = ref(false);
 const form = reactive({
     name: '',
     type: 'expense' as 'income' | 'expense',
-    parent_id: '',
+    parent_id: null as string | null,
     color: '#3B82F6',
     icon: 'tag',
     order: 0,
@@ -201,7 +201,7 @@ watch(
             Object.assign(form, {
                 name: category.name,
                 type: category.type,
-                parent_id: category.parent_id?.toString() || '',
+                parent_id: category.parent_id?.toString() || null,
                 color: category.color,
                 icon: category.icon,
                 order: category.order,
@@ -225,7 +225,7 @@ const handleSubmit = async () => {
             description: form.description || null,
         };
 
-        if (form.parent_id) {
+        if (form.parent_id !== null && form.parent_id !== '') {
             data.parent_id = parseInt(form.parent_id);
         }
 
