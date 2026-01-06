@@ -38,7 +38,7 @@ jobs:
           # The folder LOCALLY that contains the build files (Vue creates 'dist')
           local-dir: ./dist/
           # The folder ON HOSTINGER where files should go (usually public_html for main domain)
-          server-dir: ./public_html/
+          server-dir: ./domains/ledgerbook.live/public_html/
           # DANGEROUS: Set true to delete files on server that aren't in your build
           # Keep false initially to be safe, set true later to keep server clean
           dangerous-clean-slate: false
