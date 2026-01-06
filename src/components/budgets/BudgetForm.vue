@@ -3,7 +3,7 @@
         <div class="grid gap-4 md:grid-cols-2">
             <div class="space-y-2 md:col-span-2">
                 <Label for="category_id">Category *</Label>
-                <Select :model-value="form.category_id" @update:model-value="form.category_id = $event" required>
+                <Select :model-value="form.category_id" @update:model-value="(value) => form.category_id = value as string" required>
                     <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -40,7 +40,7 @@
 
             <div class="space-y-2">
                 <Label for="period">Period *</Label>
-                <Select :model-value="form.period" @update:model-value="form.period = $event" required>
+                <Select :model-value="form.period" @update:model-value="(value) => form.period = value as 'daily' | 'weekly' | 'monthly' | 'yearly'" required>
                     <SelectTrigger>
                         <SelectValue placeholder="Select period" />
                     </SelectTrigger>

@@ -1,0 +1,44 @@
+name: Deploy Vue to Hostinger
+
+on:
+  push:
+    branches:
+      - main  # Or 'master', depending on your default branch name
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the code from the repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.7.0' # Use the Node version you use locally (18 or 20)
+
+      # 3. Install Dependencies
+      - name: Install Dependencies
+        run: npm ci
+
+      # 4. Build the Project
+      - name: Build Vue App
+        run: npm run build
+
+      # 5. Deploy to Hostinger via FTP
+      - name: FTP Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # The folder LOCALLY that contains the build files (Vue creates 'dist')
+          local-dir: ./dist/
+          # The folder ON HOSTINGER where files should go (usually public_html for main domain)
+          server-dir: ./public_html/
+          # DANGEROUS: Set true to delete files on server that aren't in your build
+          # Keep false initially to be safe, set true later to keep server clean
+          dangerous-clean-slate: false
