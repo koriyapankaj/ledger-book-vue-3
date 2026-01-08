@@ -1,5 +1,6 @@
 import type { ApiError } from '@/types';
 import { AxiosError } from 'axios';
+import { logger, config } from '@/config/env.config';
 
 /**
  * Extract error message from API error response
@@ -7,13 +8,27 @@ import { AxiosError } from 'axios';
 export function getErrorMessage(error: unknown): string {
   if (error instanceof AxiosError) {
     const apiError = error.response?.data as ApiError;
-    return apiError?.message || error.message || 'An unexpected error occurred';
+    const message = apiError?.message || error.message || 'An unexpected error occurred';
+    
+    // Log detailed error in development only
+    if (config.enableDebug) {
+      logger.error('API Error:', {
+        message,
+        status: error.response?.status,
+        url: error.config?.url,
+        data: error.response?.data,
+      });
+    }
+    
+    return message;
   }
   
   if (error instanceof Error) {
+    logger.error('Error:', error.message);
     return error.message;
   }
   
+  logger.error('Unknown error:', error);
   return 'An unexpected error occurred';
 }
 

@@ -1,4 +1,6 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+import { config } from '@/config/env.config';
+
+export const API_BASE_URL = config.apiBaseUrl;
 
 export const TOKEN_KEY = 'ledger_book_token';
 export const USER_KEY = 'ledger_book_user';
