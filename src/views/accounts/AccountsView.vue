@@ -3,14 +3,14 @@
   <AuthLayout>
     <div class="space-y-6">
       <!-- Header -->
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-3xl font-bold">Accounts</h1>
+          <h1 class="text-3xl font-bold break-words">Accounts</h1>
           <p class="text-muted-foreground">Manage your financial accounts</p>
         </div>
         <Dialog v-model:open="isDialogOpen">
           <DialogTrigger as-child>
-            <Button>
+            <Button class="w-full sm:w-auto">
               <Plus class="mr-2 h-4 w-4" />
               Add Account
             </Button>

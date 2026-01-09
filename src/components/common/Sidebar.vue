@@ -9,9 +9,8 @@
         <ChevronRight v-else class="h-4 w-4" />
       </Button>
     </div>
-
-    <nav class="flex-1 space-y-1 px-2">
-      <router-link v-for="item in navigation" :key="item.name" :to="item.path" v-slot="{ isActive }">
+    <nav class="flex-1 px-2 space-y-2"> <router-link v-for="item in navigation" :key="item.name" :to="item.path"
+        class="block" v-slot="{ isActive }">
         <div
           class="flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer"
           :class="[
@@ -24,7 +23,6 @@
         </div>
       </router-link>
     </nav>
-
     <div v-if="!sidebarStore.isCollapsed && authStore.user" class="border-t p-4 space-y-2">
       <p class="text-xs font-semibold text-muted-foreground">FINANCIAL SUMMARY</p>
       <div class="space-y-1 text-sm">

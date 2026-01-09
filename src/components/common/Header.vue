@@ -10,7 +10,7 @@
               <Menu class="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" class="w-[280px] sm:w-[350px] pr-0">
+          <SheetContent side="left" class="w-[280px] sm:w-[350px] pr-6">
             <div class="flex flex-col h-full py-4">
               <div class="px-2 mb-6">
                 <h2 class="text-lg font-bold flex items-center gap-2">
