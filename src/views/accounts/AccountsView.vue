@@ -22,7 +22,7 @@
                 {{ editingAccount ? 'Update account details' : 'Add a new account' }}
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea class="max-h-[70vh] -mx-6 px-6">
+            <ScrollArea class="max-h-[70vh] -mx-6 px-6 pb-0">
               <AccountForm :account="editingAccount" @submit="handleSubmit" @cancel="closeDialog" />
             </ScrollArea>
           </DialogContent>
