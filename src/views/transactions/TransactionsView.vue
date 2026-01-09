@@ -21,7 +21,9 @@
                 {{ editingTransaction ? 'Update transaction details' : 'Record a new transaction' }}
               </DialogDescription>
             </DialogHeader>
-            <TransactionForm :transaction="editingTransaction" @submit="handleSubmit" @cancel="closeDialog" />
+            <ScrollArea class="max-h-[70vh] -mx-6 px-6 pb-0">
+              <TransactionForm :transaction="editingTransaction" @submit="handleSubmit" @cancel="closeDialog" />
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>
@@ -240,6 +242,7 @@ import TransactionForm from '@/components/transactions/TransactionForm.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
