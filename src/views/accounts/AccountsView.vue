@@ -15,7 +15,7 @@
               Add Account
             </Button>
           </DialogTrigger>
-          <DialogContent class="max-w-2xl py-4">
+          <DialogContent class="max-w-2xl py-4 w-[calc(100%-2rem)] sm:w-full">
             <DialogHeader>
               <DialogTitle>{{ editingAccount ? 'Edit Account' : 'Create New Account' }}</DialogTitle>
               <DialogDescription>
