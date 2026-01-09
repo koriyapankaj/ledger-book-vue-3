@@ -89,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   Wallet,
@@ -149,4 +149,45 @@ const userInitials = computed(() => {
 const handleLogout = () => {
   authStore.logout();
 };
+
+const touchStartX = ref(0);
+const touchStartY = ref(0);
+
+const handleTouchStart = (e: TouchEvent) => {
+  if (e.touches.length > 0 && e.touches[0]) {
+    touchStartX.value = e.touches[0].clientX;
+    touchStartY.value = e.touches[0].clientY;
+  }
+};
+
+const handleTouchEnd = (e: TouchEvent) => {
+  if (e.changedTouches.length > 0 && e.changedTouches[0]) {
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+
+    // Calculate the difference
+    const diffX = touchEndX - touchStartX.value;
+    const diffY = Math.abs(touchEndY - touchStartY.value);
+
+    const isEdgeStart = touchStartX.value < 50;
+    const isSwipeRight = diffX > 100;
+    const isHorizontal = diffX > diffY * 2;
+
+    if (isEdgeStart && isSwipeRight && isHorizontal && !isMobileMenuOpen.value) {
+      isMobileMenuOpen.value = true;
+    }
+  }
+};
+
+onMounted(() => {
+  // Add touch listeners to the entire window
+  window.addEventListener('touchstart', handleTouchStart);
+  window.addEventListener('touchend', handleTouchEnd);
+});
+
+onUnmounted(() => {
+  // Clean up listeners
+  window.removeEventListener('touchstart', handleTouchStart);
+  window.removeEventListener('touchend', handleTouchEnd);
+});
 </script>
