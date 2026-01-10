@@ -28,54 +28,70 @@
 
       <!-- Summary Cards -->
       <div class="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Total Contacts</CardTitle>
-            <Users class="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold">
-              {{ summary?.contacts_count || 0 }}
-            </div>
-          </CardContent>
-        </Card>
+        <!-- Loading Skeletons -->
+        <template v-if="loading">
+          <Card v-for="i in 4" :key="i">
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton class="h-4 w-28" />
+              <Skeleton class="h-4 w-4 rounded-full" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton class="h-8 w-20" />
+            </CardContent>
+          </Card>
+        </template>
 
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">They Owe You</CardTitle>
-            <TrendingUp class="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold text-green-600">
-              ₹{{ formatNumber(summary?.total_owed_to_you || 0) }}
-            </div>
-          </CardContent>
-        </Card>
+        <!-- Actual Cards -->
+        <template v-else>
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Total Contacts</CardTitle>
+              <Users class="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold">
+                {{ summary?.contacts_count || 0 }}
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">You Owe Them</CardTitle>
-            <TrendingDown class="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold text-red-600">
-              ₹{{ formatNumber(summary?.total_you_owe || 0) }}
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">They Owe You</CardTitle>
+              <TrendingUp class="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold text-green-600">
+                ₹{{ formatNumber(summary?.total_owed_to_you || 0) }}
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Net Position</CardTitle>
-            <Wallet class="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold"
-              :class="(summary?.net_position || 0) >= 0 ? 'text-green-600' : 'text-red-600'">
-              ₹{{ formatNumber(summary?.net_position || 0) }}
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">You Owe Them</CardTitle>
+              <TrendingDown class="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold text-red-600">
+                ₹{{ formatNumber(summary?.total_you_owe || 0) }}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Net Position</CardTitle>
+              <Wallet class="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold"
+                :class="(summary?.net_position || 0) >= 0 ? 'text-green-600' : 'text-red-600'">
+                ₹{{ formatNumber(summary?.net_position || 0) }}
+              </div>
+            </CardContent>
+          </Card>
+        </template>
       </div>
 
       <!-- Filters -->
@@ -113,8 +129,34 @@
       </Card>
 
       <!-- Contacts List -->
-      <div v-if="loading" class="flex justify-center py-8">
-        <Loader2 class="h-8 w-8 animate-spin" />
+      <div v-if="loading" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card v-for="i in 6" :key="i" class="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <div class="flex items-start justify-between">
+              <div class="flex items-center space-x-3">
+                <Skeleton class="h-10 w-10 rounded-full" />
+                <div class="space-y-2">
+                  <Skeleton class="h-5 w-32" />
+                  <div class="flex items-center space-x-2">
+                    <Skeleton class="h-5 w-20 rounded-full" />
+                  </div>
+                </div>
+              </div>
+              <Skeleton class="h-8 w-8 rounded-md" />
+            </div>
+          </CardHeader>
+          <CardContent class="space-y-4">
+            <div class="space-y-2">
+              <Skeleton class="h-4 w-full" />
+              <Skeleton class="h-4 w-3/4" />
+            </div>
+            <div class="flex justify-between items-center pt-2 border-t">
+              <Skeleton class="h-4 w-20" />
+              <Skeleton class="h-6 w-24" />
+            </div>
+            <Skeleton class="h-9 w-full rounded-md" />
+          </CardContent>
+        </Card>
       </div>
 
       <div v-else-if="filteredContacts.length === 0" class="text-center py-8">
@@ -221,7 +263,6 @@ import {
   TrendingDown,
   Wallet,
   X,
-  Loader2,
   MoreVertical,
   Pencil,
   Trash2,
@@ -241,6 +282,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,

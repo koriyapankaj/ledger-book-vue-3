@@ -29,57 +29,74 @@
       </div>
       <!-- Statistics Cards -->
       <div class="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Total Income</CardTitle>
-            <TrendingUp class="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold text-green-600">
-              ₹{{ formatNumber(statistics?.total_income || 0) }}
-            </div>
-            <p class="text-xs text-muted-foreground">This {{ period }}</p>
-          </CardContent>
-        </Card>
+        <!-- Loading Skeletons -->
+        <template v-if="loading">
+          <Card v-for="i in 4" :key="i">
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton class="h-4 w-24" />
+              <Skeleton class="h-4 w-4 rounded-full" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton class="h-8 w-28 mb-2" />
+              <Skeleton class="h-3 w-20" />
+            </CardContent>
+          </Card>
+        </template>
 
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Total Expense</CardTitle>
-            <TrendingDown class="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold text-red-600">
-              ₹{{ formatNumber(statistics?.total_expense || 0) }}
-            </div>
-            <p class="text-xs text-muted-foreground">This {{ period }}</p>
-          </CardContent>
-        </Card>
+        <!-- Actual Cards -->
+        <template v-else>
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Total Income</CardTitle>
+              <TrendingUp class="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold text-green-600">
+                ₹{{ formatNumber(statistics?.total_income || 0) }}
+              </div>
+              <p class="text-xs text-muted-foreground">This {{ period }}</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Net Savings</CardTitle>
-            <Wallet class="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold text-primary">
-              ₹{{ formatNumber(statistics?.net_savings || 0) }}
-            </div>
-            <p class="text-xs text-muted-foreground">This {{ period }}</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Total Expense</CardTitle>
+              <TrendingDown class="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold text-red-600">
+                ₹{{ formatNumber(statistics?.total_expense || 0) }}
+              </div>
+              <p class="text-xs text-muted-foreground">This {{ period }}</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Transfers</CardTitle>
-            <ArrowLeftRight class="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold text-blue-600">
-              ₹{{ formatNumber(statistics?.total_transfers || 0) }}
-            </div>
-            <p class="text-xs text-muted-foreground">This {{ period }}</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Net Savings</CardTitle>
+              <Wallet class="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold text-primary">
+                ₹{{ formatNumber(statistics?.net_savings || 0) }}
+              </div>
+              <p class="text-xs text-muted-foreground">This {{ period }}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle class="text-sm font-medium">Transfers</CardTitle>
+              <ArrowLeftRight class="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div class="text-2xl font-bold text-blue-600">
+                ₹{{ formatNumber(statistics?.total_transfers || 0) }}
+              </div>
+              <p class="text-xs text-muted-foreground">This {{ period }}</p>
+            </CardContent>
+          </Card>
+        </template>
       </div>
 
       <!-- Filters -->
@@ -135,8 +152,22 @@
           <CardTitle>Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div v-if="loading" class="flex justify-center py-8">
-            <Loader2 class="h-8 w-8 animate-spin" />
+          <div v-if="loading" class="space-y-2">
+            <div v-for="i in 8" :key="i"
+              class="flex items-center justify-between p-4 rounded-lg border">
+              <div class="flex items-center space-x-4">
+                <Skeleton class="h-9 w-9 rounded-full" />
+                <div class="space-y-2">
+                  <Skeleton class="h-4 w-40" />
+                  <Skeleton class="h-3 w-60" />
+                  <Skeleton class="h-3 w-24" />
+                </div>
+              </div>
+              <div class="flex items-center space-x-4">
+                <Skeleton class="h-6 w-24" />
+                <Skeleton class="h-8 w-8 rounded-md" />
+              </div>
+            </div>
           </div>
 
           <div v-else-if="transactions.length === 0" class="text-center py-8">
@@ -230,7 +261,6 @@ import {
   Pencil,
   Trash2,
   X,
-  Loader2,
   ArrowUpCircle,
   ArrowDownCircle,
   ArrowRightLeft,
@@ -243,6 +273,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,

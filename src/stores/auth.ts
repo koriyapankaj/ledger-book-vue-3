@@ -42,7 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
       router.push('/dashboard');
     } catch (err: any) {
       const apiError = err.response?.data as ApiError;
-      
+
       if (apiError?.errors) {
         // Laravel validation errors
         validationErrors.value = apiError.errors;
@@ -73,7 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
       router.push('/dashboard');
     } catch (err: any) {
       const apiError = err.response?.data as ApiError;
-      
+
       if (apiError?.errors) {
         // Laravel validation errors
         validationErrors.value = apiError.errors;
@@ -89,11 +89,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function fetchUser() {
     try {
+      loading.value = true;
       const response = await authService.me();
       user.value = response.user;
       localStorage.setItem(USER_KEY, JSON.stringify(response.user));
     } catch (err) {
       logout();
+    } finally {
+      loading.value = false;
     }
   }
 
