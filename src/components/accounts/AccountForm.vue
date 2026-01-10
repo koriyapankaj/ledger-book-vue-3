@@ -84,7 +84,7 @@
     </div>
 
     <div class="flex justify-end space-x-2 pt-4 pb-4">
-      <Button type="button" variant="outline" @click="$emit('cancel')">
+      <Button type="button" variant="outline" @click="$emit('cancel')" :disabled="submitting">
         Cancel
       </Button>
       <Button type="submit" :disabled="submitting">
@@ -161,11 +161,10 @@ watch(
 );
 
 const handleSubmit = async () => {
+  // Prevent multiple submissions
+  if (submitting.value) return;
+
   submitting.value = true;
-  try {
-    emit('submit', { ...form });
-  } finally {
-    submitting.value = false;
-  }
+  emit('submit', { ...form });
 };
 </script>

@@ -366,6 +366,9 @@ const handleSubmit = async (formData: any) => {
       description: error.response?.data?.message || 'Operation failed',
       variant: 'destructive',
     });
+  } finally {
+    // Reset the form's submitting state by closing and reopening if needed
+    // The form will reset its state when the dialog closes
   }
 };
 
