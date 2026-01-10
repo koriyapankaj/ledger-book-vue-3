@@ -1,7 +1,7 @@
 <template>
   <header
     class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-    <div class="container flex h-16 items-center justify-between px-4">
+    <div class="container flex h-16 items-center justify-between px-4 max-w-full">
       <div class="flex items-center space-x-4">
 
         <Sheet v-model:open="isMobileMenuOpen">

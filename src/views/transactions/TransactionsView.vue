@@ -14,21 +14,21 @@
               Add Transaction
             </Button>
           </DialogTrigger>
-          <DialogContent class="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent class="max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>{{ editingTransaction ? 'Edit Transaction' : 'New Transaction' }}</DialogTitle>
               <DialogDescription>
                 {{ editingTransaction ? 'Update transaction details' : 'Record a new transaction' }}
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea class="max-h-[70vh] -mx-6 px-6 pb-0">
+            <ScrollArea class="max-h-[70vh] pr-4">
               <TransactionForm :transaction="editingTransaction" @submit="handleSubmit" @cancel="closeDialog" />
             </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>
       <!-- Statistics Cards -->
-      <div class="grid gap-4 md:grid-cols-4">
+      <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
         <!-- Loading Skeletons -->
         <template v-if="loading">
           <Card v-for="i in 4" :key="i">
@@ -105,7 +105,7 @@
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div class="grid gap-4 md:grid-cols-4">
+          <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
             <Select v-model="filters.period">
               <SelectTrigger>
                 <SelectValue placeholder="Period" />
@@ -134,7 +134,7 @@
               </SelectContent>
             </Select>
 
-            <Input v-model="filters.search" placeholder="Search transactions..." class="md:col-span-2" />
+            <Input v-model="filters.search" placeholder="Search transactions..." class="sm:col-span-2 md:col-span-2" />
           </div>
 
           <div class="flex justify-end mt-4">
@@ -154,17 +154,17 @@
         <CardContent>
           <div v-if="loading" class="space-y-2">
             <div v-for="i in 8" :key="i"
-              class="flex items-center justify-between p-4 rounded-lg border">
-              <div class="flex items-center space-x-4">
-                <Skeleton class="h-9 w-9 rounded-full" />
-                <div class="space-y-2">
-                  <Skeleton class="h-4 w-40" />
-                  <Skeleton class="h-3 w-60" />
+              class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 rounded-lg border gap-3">
+              <div class="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+                <Skeleton class="h-9 w-9 rounded-full flex-shrink-0" />
+                <div class="space-y-2 min-w-0 flex-1">
+                  <Skeleton class="h-4 w-full max-w-[200px]" />
+                  <Skeleton class="h-3 w-full max-w-[250px]" />
                   <Skeleton class="h-3 w-24" />
                 </div>
               </div>
-              <div class="flex items-center space-x-4">
-                <Skeleton class="h-6 w-24" />
+              <div class="flex items-center space-x-2 sm:space-x-4 self-end sm:self-auto">
+                <Skeleton class="h-6 w-20 sm:w-24" />
                 <Skeleton class="h-8 w-8 rounded-md" />
               </div>
             </div>
@@ -176,23 +176,23 @@
 
           <div v-else class="space-y-2">
             <div v-for="transaction in transactions" :key="transaction.id"
-              class="flex items-center justify-between p-4 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
+              class="flex items-start sm:items-center justify-between p-3 sm:p-4 rounded-lg border hover:bg-accent cursor-pointer transition-colors gap-2"
               @click="viewTransaction(transaction)">
-              <div class="flex items-center space-x-4">
-                <div class="p-2 rounded-full" :class="getTransactionBgClass(transaction.type)">
-                  <component :is="getTransactionIcon(transaction.type)" class="h-5 w-5"
+              <div class="flex items-start sm:items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+                <div class="p-2 rounded-full flex-shrink-0" :class="getTransactionBgClass(transaction.type)">
+                  <component :is="getTransactionIcon(transaction.type)" class="h-4 w-4 sm:h-5 sm:w-5"
                     :class="getTransactionTextClass(transaction.type)" />
                 </div>
 
-                <div>
-                  <p class="font-medium">{{ transaction.title ||
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium truncate">{{ transaction.title ||
                     formatTransactionType(transaction.type) }}</p>
-                  <div class="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <span>{{ transaction.account.name }}</span>
-                    <ArrowRight v-if="transaction.to_account" class="h-3 w-3" />
-                    <span v-if="transaction.to_account">{{ transaction.to_account.name }}</span>
-                    <span v-if="transaction.category">• {{ transaction.category.name }}</span>
-                    <span v-if="transaction.contact">• {{ transaction.contact.name }}</span>
+                  <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-muted-foreground">
+                    <span class="truncate max-w-[120px] sm:max-w-none">{{ transaction.account.name }}</span>
+                    <ArrowRight v-if="transaction.to_account" class="h-3 w-3 flex-shrink-0" />
+                    <span v-if="transaction.to_account" class="truncate max-w-[120px] sm:max-w-none">{{ transaction.to_account.name }}</span>
+                    <span v-if="transaction.category" class="truncate max-w-[100px] sm:max-w-none">• {{ transaction.category.name }}</span>
+                    <span v-if="transaction.contact" class="truncate max-w-[100px] sm:max-w-none">• {{ transaction.contact.name }}</span>
                   </div>
                   <p class="text-xs text-muted-foreground">
                     {{ formatDate(transaction.transaction_date) }}
@@ -200,8 +200,8 @@
                 </div>
               </div>
 
-              <div class="flex items-center space-x-4">
-                <div class="text-lg font-bold" :class="getAmountClass(transaction.type)">
+              <div class="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+                <div class="text-sm sm:text-lg font-bold whitespace-nowrap" :class="getAmountClass(transaction.type)">
                   {{ getAmountPrefix(transaction.type) }}₹{{ formatNumber(transaction.amount) }}
                 </div>
 
@@ -227,11 +227,11 @@
           </div>
 
           <!-- Pagination -->
-          <div v-if="meta" class="flex items-center justify-between mt-4">
+          <div v-if="meta" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-4">
             <p class="text-sm text-muted-foreground">
               Showing {{ transactions.length }} of {{ meta.total }} transactions
             </p>
-            <div class="flex space-x-2">
+            <div class="flex space-x-2 w-full sm:w-auto">
               <Button variant="outline" size="sm" :disabled="meta.current_page === 1"
                 @click="changePage(meta.current_page - 1)">
                 Previous
