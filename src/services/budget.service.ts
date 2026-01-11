@@ -8,12 +8,18 @@ export interface Budget {
     name: string;
     color: string;
     icon: string;
+    has_children: boolean;
+    children?: Array<{
+      id: number;
+      name: string;
+    }>;
   };
   amount: number;
   period: 'daily' | 'weekly' | 'monthly' | 'yearly';
   start_date: string;
   end_date: string | null;
   is_active: boolean;
+  include_subcategories: boolean;
   created_at: string;
   updated_at: string;
   spent_amount?: number;
@@ -28,6 +34,7 @@ export interface BudgetFormData {
   period: 'daily' | 'weekly' | 'monthly' | 'yearly';
   start_date: string;
   end_date?: string;
+  include_subcategories?: boolean;
 }
 
 export const budgetService = {

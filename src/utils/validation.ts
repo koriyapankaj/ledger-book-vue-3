@@ -338,4 +338,8 @@ export const budgetFormSchema = yup.object({
     .nullable()
     .min(yup.ref('start_date'), 'End date must be after start date')
     .typeError('Invalid end date'),
+
+  include_subcategories: yup
+    .boolean()
+    .default(false),
 });
