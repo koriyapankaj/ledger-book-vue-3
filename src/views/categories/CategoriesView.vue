@@ -14,15 +14,17 @@
               Add Category
             </Button>
           </DialogTrigger>
-          <DialogContent class="max-w-2xl">
+          <DialogContent class="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>{{ editingCategory ? 'Edit Category' : 'Create New Category' }}</DialogTitle>
               <DialogDescription>
                 {{ editingCategory ? 'Update category details' : 'Add a new category' }}
               </DialogDescription>
             </DialogHeader>
-            <CategoryForm :category="editingCategory" :categories="categories" @submit="handleSubmit"
-              @cancel="closeDialog" />
+            <ScrollArea class="max-h-[70vh] pr-4">
+              <CategoryForm :category="editingCategory" :categories="categories" @submit="handleSubmit"
+                @cancel="closeDialog" />
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>
@@ -123,6 +125,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
