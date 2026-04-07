@@ -14,14 +14,16 @@
               Create Budget
             </Button>
           </DialogTrigger>
-          <DialogContent class="max-w-2xl">
+          <DialogContent class="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>{{ editingBudget ? 'Edit Budget' : 'Create New Budget' }}</DialogTitle>
               <DialogDescription>
                 {{ editingBudget ? 'Update budget details' : 'Set a spending limit for a category' }}
               </DialogDescription>
             </DialogHeader>
-            <BudgetForm :budget="editingBudget" @submit="handleSubmit" @cancel="closeDialog" />
+            <ScrollArea class="max-h-[70vh] px-1 pr-4">
+              <BudgetForm :budget="editingBudget" @submit="handleSubmit" @cancel="closeDialog" />
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>
@@ -247,6 +249,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,

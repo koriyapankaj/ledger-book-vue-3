@@ -14,14 +14,16 @@
               Add Contact
             </Button>
           </DialogTrigger>
-          <DialogContent class="max-w-2xl">
+          <DialogContent class="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>{{ editingContact ? 'Edit Contact' : 'Create New Contact' }}</DialogTitle>
               <DialogDescription>
                 {{ editingContact ? 'Update contact details' : 'Add a new contact for debt tracking' }}
               </DialogDescription>
             </DialogHeader>
-            <ContactForm :contact="editingContact" @submit="handleSubmit" @cancel="closeDialog" />
+            <ScrollArea class="max-h-[70vh] px-1 pr-4">
+              <ContactForm :contact="editingContact" @submit="handleSubmit" @cancel="closeDialog" />
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>
@@ -282,6 +284,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
