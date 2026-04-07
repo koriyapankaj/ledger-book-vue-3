@@ -388,11 +388,11 @@ const { handleSubmit, setValues, values } = useForm({
 
 // Computed properties
 const showCategoryField = computed(() => {
-  return ['income', 'expense'].includes(values.type);
+  return ['income', 'expense'].includes(values.type || '');
 });
 
 const showContactField = computed(() => {
-  return ['lent', 'borrowed', 'repayment_in', 'repayment_out'].includes(values.type);
+  return ['lent', 'borrowed', 'repayment_in', 'repayment_out'].includes(values.type || '');
 });
 
 const filteredToAccounts = computed(() => {
@@ -406,29 +406,29 @@ const filteredCategories = computed(() => {
 
 const selectedAccountBalance = computed(() => {
   const account = accounts.value.find((a) => a.id.toString() === values.account_id);
-  
+
   if (!account) return 0;
-  
+
   let availableBalance = account.balance;
 
   if (props.transaction && props.transaction.account.id.toString() === values.account_id) {
     const originalType = props.transaction.type;
     const originalAmount = props.transaction.amount;
     const wasDeduction = ['expense', 'transfer', 'lent', 'repayment_out'].includes(originalType);
-    
+
     if (wasDeduction) {
       availableBalance += originalAmount;
     } else {
       availableBalance -= originalAmount;
     }
   }
-  
+
   return availableBalance;
 });
 
 const hasInsufficientBalance = computed(() => {
   if (!values.account_id || !values.amount) return false;
-  const isDeduction = ['expense', 'transfer', 'lent', 'repayment_out'].includes(values.type);
+  const isDeduction = ['expense', 'transfer', 'lent', 'repayment_out'].includes(values.type || '');
   if (!isDeduction) return false;
 
   return values.amount > selectedAccountBalance.value;
@@ -545,10 +545,10 @@ watch(
     if (newType !== 'transfer') {
       setValues({ to_account_id: '' });
     }
-    if (!['income', 'expense'].includes(newType)) {
+    if (!['income', 'expense'].includes(newType || '')) {
       setValues({ category_id: '' });
     }
-    if (!['lent', 'borrowed', 'repayment_in', 'repayment_out'].includes(newType)) {
+    if (!['lent', 'borrowed', 'repayment_in', 'repayment_out'].includes(newType || '')) {
       setValues({ contact_id: '' });
     }
   }

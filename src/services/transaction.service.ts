@@ -77,9 +77,9 @@ export const transactionService = {
     return data;
   },
 
-  async getStatistics(period: string = 'month') {
+  async getStatistics(period: string = 'month', params?: Record<string, any>) {
     const { data } = await api.get<{ statistics: TransactionStatistics }>('/transactions-statistics', {
-      params: { period },
+      params: { period, ...(params || {}) },
     });
     return data;
   },

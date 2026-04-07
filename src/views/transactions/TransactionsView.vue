@@ -115,6 +115,8 @@
                 <SelectItem value="week">This Week</SelectItem>
                 <SelectItem value="month">This Month</SelectItem>
                 <SelectItem value="year">This Year</SelectItem>
+                <SelectItem value="last_year">Last Year</SelectItem>
+                <SelectItem value="custom">Custom Range</SelectItem>
               </SelectContent>
             </Select>
 
@@ -135,6 +137,19 @@
             </Select>
 
             <Input v-model="filters.search" placeholder="Search transactions..." class="sm:col-span-2 md:col-span-2" />
+
+            <template v-if="isCustomRange">
+              <Input
+                v-model="filters.start_date"
+                type="date"
+                placeholder="Start date"
+              />
+              <Input
+                v-model="filters.end_date"
+                type="date"
+                placeholder="End date"
+              />
+            </template>
           </div>
 
           <div class="flex justify-end mt-4">
@@ -170,12 +185,12 @@
             </div>
           </div>
 
-          <div v-else-if="transactions.length === 0" class="text-center py-8">
+          <div v-else-if="displayedTransactions.length === 0" class="text-center py-8">
             <p class="text-muted-foreground">No transactions found</p>
           </div>
 
           <div v-else class="space-y-2">
-            <div v-for="transaction in transactions" :key="transaction.id"
+            <div v-for="transaction in displayedTransactions" :key="transaction.id"
               class="flex items-start sm:items-center justify-between p-3 sm:p-4 rounded-lg border hover:bg-accent cursor-pointer transition-colors gap-2"
               @click="viewTransaction(transaction)">
               <div class="flex items-start sm:items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
@@ -229,7 +244,7 @@
           <!-- Pagination -->
           <div v-if="meta" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-4">
             <p class="text-sm text-muted-foreground">
-              Showing {{ transactions.length }} of {{ meta.total }} transactions
+              Showing {{ displayedTransactions.length }} of {{ meta.total }} transactions
             </p>
             <div class="flex space-x-2 w-full sm:w-auto">
               <Button variant="outline" size="sm" :disabled="meta.current_page === 1"
@@ -317,17 +332,87 @@ const filters = ref({
   period: 'month',
   type: 'all',
   search: '',
+  start_date: '',
+  end_date: '',
   page: 1,
+});
+
+const isCustomRange = computed(() => filters.value.period === 'custom');
+
+const periodLabelMap: Record<string, string> = {
+  today: 'Today',
+  week: 'This Week',
+  month: 'This Month',
+  year: 'This Year',
+  last_year: 'Last Year',
+  custom: 'Custom Range',
+};
+
+const getDateOnly = (date: string) => {
+  const parsed = new Date(date);
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+};
+
+const getLastYearRange = () => {
+  const now = new Date();
+  const year = now.getFullYear() - 1;
+  return {
+    start: new Date(year, 0, 1),
+    end: new Date(year, 11, 31),
+  };
+};
+
+const toApiDate = (date: Date) => date.toISOString().split('T')[0] || '';
+
+const displayedTransactions = computed(() => {
+  if (filters.value.period === 'custom') {
+    if (!filters.value.start_date || !filters.value.end_date) {
+      return transactions.value;
+    }
+
+    const start = getDateOnly(filters.value.start_date);
+    const end = getDateOnly(filters.value.end_date);
+
+    return transactions.value.filter((transaction) => {
+      const transactionDate = getDateOnly(transaction.transaction_date);
+      return transactionDate >= start && transactionDate <= end;
+    });
+  }
+
+  if (filters.value.period === 'last_year') {
+    const { start, end } = getLastYearRange();
+    return transactions.value.filter((transaction) => {
+      const transactionDate = getDateOnly(transaction.transaction_date);
+      return transactionDate >= start && transactionDate <= end;
+    });
+  }
+
+  return transactions.value;
 });
 
 const fetchTransactions = async () => {
   try {
     loading.value = true;
+    const selectedPeriod = ['last_year', 'custom'].includes(filters.value.period)
+      ? 'year'
+      : filters.value.period;
+
     const params: any = {
-      period: filters.value.period,
+      period: selectedPeriod,
       per_page: 15,
       page: filters.value.page,
     };
+
+    if (filters.value.period === 'last_year') {
+      const { start, end } = getLastYearRange();
+      params.start_date = toApiDate(start);
+      params.end_date = toApiDate(end);
+    }
+
+    if (filters.value.period === 'custom' && filters.value.start_date && filters.value.end_date) {
+      params.start_date = filters.value.start_date;
+      params.end_date = filters.value.end_date;
+    }
 
     if (filters.value.type !== 'all') {
       params.type = filters.value.type;
@@ -353,9 +438,25 @@ const fetchTransactions = async () => {
 
 const fetchStatistics = async () => {
   try {
-    const response = await transactionService.getStatistics(filters.value.period);
+    const selectedPeriod = ['last_year', 'custom'].includes(filters.value.period)
+      ? 'year'
+      : filters.value.period;
+
+    const params: Record<string, string> = {};
+    if (filters.value.period === 'last_year') {
+      const { start, end } = getLastYearRange();
+      params.start_date = toApiDate(start);
+      params.end_date = toApiDate(end);
+    }
+
+    if (filters.value.period === 'custom' && filters.value.start_date && filters.value.end_date) {
+      params.start_date = filters.value.start_date;
+      params.end_date = filters.value.end_date;
+    }
+
+    const response = await transactionService.getStatistics(selectedPeriod, params);
     statistics.value = response.statistics;
-    period.value = response.statistics.period;
+    period.value = periodLabelMap[filters.value.period] || response.statistics.period;
   } catch (error) {
     console.error('Failed to fetch statistics', error);
   }
@@ -432,6 +533,8 @@ const resetFilters = () => {
     period: 'month',
     type: 'all',
     search: '',
+    start_date: '',
+    end_date: '',
     page: 1,
   };
 };
@@ -512,8 +615,11 @@ onMounted(() => {
 });
 
 watch(
-  () => [filters.value.period, filters.value.type, filters.value.search],
+  () => [filters.value.period, filters.value.type, filters.value.search, filters.value.start_date, filters.value.end_date],
   () => {
+    if (filters.value.period === 'custom' && (!filters.value.start_date || !filters.value.end_date)) {
+      return;
+    }
     filters.value.page = 1;
     fetchTransactions();
     fetchStatistics();
