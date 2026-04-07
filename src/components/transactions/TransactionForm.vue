@@ -65,8 +65,11 @@
         <div class="relative">
           <span class="absolute left-3 top-2.5 text-muted-foreground">₹</span>
           <Input id="amount" v-model.number="form.amount" type="number" step="0.01" min="0.01" class="pl-8"
-            placeholder="0.00" required />
+            placeholder="0.00" required :class="{ 'border-red-500': hasInsufficientBalance }" />
         </div>
+        <p v-if="hasInsufficientBalance" class="text-xs text-red-500">
+          Insufficient balance. Available: ₹{{ formatNumber(selectedAccountBalance) }}
+        </p>
       </div>
 
       <!-- Transaction Date -->
@@ -338,6 +341,37 @@ const showContactField = computed(() => {
   return ['lent', 'borrowed', 'repayment_in', 'repayment_out'].includes(form.type);
 });
 
+const selectedAccountBalance = computed(() => {
+  const account = accounts.value.find((a) => a.id.toString() === form.account_id);
+
+  if (!account) return 0;
+
+  let availableBalance = account.balance;
+
+  // Adjust available balance if editing an existing transaction on the same account
+  if (props.transaction && props.transaction.account.id.toString() === form.account_id) {
+    const originalType = props.transaction.type;
+    const originalAmount = props.transaction.amount;
+    const wasDeduction = ['expense', 'transfer', 'lent', 'repayment_out'].includes(originalType);
+
+    if (wasDeduction) {
+      availableBalance += originalAmount;
+    } else {
+      availableBalance -= originalAmount;
+    }
+  }
+
+  return availableBalance;
+});
+
+const hasInsufficientBalance = computed(() => {
+  if (!form.account_id || !form.amount) return false;
+  const isDeduction = ['expense', 'transfer', 'lent', 'repayment_out'].includes(form.type);
+  if (!isDeduction) return false;
+
+  return form.amount > selectedAccountBalance.value;
+});
+
 const filteredToAccounts = computed(() => {
   return accounts.value.filter((acc) => acc.id.toString() !== form.account_id);
 });
@@ -361,6 +395,10 @@ const isFormValid = computed(() => {
   }
 
   if (showContactField.value && !form.contact_id) {
+    return false;
+  }
+
+  if (hasInsufficientBalance.value) {
     return false;
   }
 
