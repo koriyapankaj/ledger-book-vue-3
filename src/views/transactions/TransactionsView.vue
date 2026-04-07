@@ -22,7 +22,7 @@
               </DialogDescription>
             </DialogHeader>
             <ScrollArea class="max-h-[70vh] pr-4">
-              <TransactionForm :transaction="editingTransaction" @submit="handleSubmit" @cancel="closeDialog" />
+              <TransactionForm :transaction="editingTransaction" :prefill="newTransactionPrefill" @submit="handleSubmit" @cancel="closeDialog" />
             </ScrollArea>
           </DialogContent>
         </Dialog>
@@ -264,6 +264,7 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useToast } from '@/components/ui/toast/use-toast';
 import {
   Plus,
@@ -318,6 +319,8 @@ import {
 import { useAuthStore } from '@/stores/auth';
 
 const { toast } = useToast();
+const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 
 const transactions = ref<Transaction[]>([]);
@@ -326,6 +329,11 @@ const meta = ref<any>(null);
 const loading = ref(false);
 const isDialogOpen = ref(false);
 const editingTransaction = ref<Transaction | null>(null);
+const newTransactionPrefill = ref<{
+  type?: Transaction['type'];
+  amount?: number;
+  contact_id?: string;
+} | null>(null);
 const period = ref('month');
 
 const filters = ref({
@@ -363,6 +371,65 @@ const getLastYearRange = () => {
 };
 
 const toApiDate = (date: Date) => date.toISOString().split('T')[0] || '';
+
+const transactionTypes: Transaction['type'][] = [
+  'income',
+  'expense',
+  'transfer',
+  'lent',
+  'borrowed',
+  'repayment_in',
+  'repayment_out',
+];
+
+const parseTransactionPrefillFromQuery = () => {
+  const isNew = route.query.new === 'true';
+  if (!isNew) {
+    return null;
+  }
+
+  const queryType = route.query.type;
+  const type = typeof queryType === 'string' && transactionTypes.includes(queryType as Transaction['type'])
+    ? (queryType as Transaction['type'])
+    : undefined;
+
+  const queryAmount = route.query.amount;
+  const amount = typeof queryAmount === 'string' ? Number(queryAmount) : NaN;
+
+  const queryContactId = route.query.contact_id;
+  const contactId = typeof queryContactId === 'string' ? queryContactId : '';
+
+  return {
+    type,
+    amount: Number.isFinite(amount) && amount > 0 ? amount : undefined,
+    contact_id: contactId || undefined,
+  };
+};
+
+const clearNewTransactionQuery = async () => {
+  if (!route.query.new) {
+    return;
+  }
+
+  const query = { ...route.query };
+  delete query.new;
+  delete query.type;
+  delete query.contact_id;
+  delete query.amount;
+
+  await router.replace({ query });
+};
+
+const openTransactionDialogFromQuery = () => {
+  const prefill = parseTransactionPrefillFromQuery();
+  if (!prefill) {
+    return;
+  }
+
+  editingTransaction.value = null;
+  newTransactionPrefill.value = prefill;
+  isDialogOpen.value = true;
+};
 
 const displayedTransactions = computed(() => {
   if (filters.value.period === 'custom') {
@@ -496,6 +563,7 @@ const viewTransaction = (transaction: Transaction) => {
 };
 
 const editTransaction = (transaction: Transaction) => {
+  newTransactionPrefill.value = null;
   editingTransaction.value = transaction;
   isDialogOpen.value = true;
 };
@@ -526,6 +594,8 @@ const deleteTransaction = async (transaction: Transaction) => {
 const closeDialog = () => {
   isDialogOpen.value = false;
   editingTransaction.value = null;
+  newTransactionPrefill.value = null;
+  void clearNewTransactionQuery();
 };
 
 const resetFilters = () => {
@@ -612,7 +682,15 @@ const getAmountPrefix = (type: string) => {
 onMounted(() => {
   fetchTransactions();
   fetchStatistics();
+  openTransactionDialogFromQuery();
 });
+
+watch(
+  () => route.query,
+  () => {
+    openTransactionDialogFromQuery();
+  }
+);
 
 watch(
   () => [filters.value.period, filters.value.type, filters.value.search, filters.value.start_date, filters.value.end_date],

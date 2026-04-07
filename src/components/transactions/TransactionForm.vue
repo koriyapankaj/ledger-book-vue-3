@@ -327,6 +327,11 @@ import { contactService } from '@/services/contact.service';
 
 const props = defineProps<{
   transaction?: Transaction | null;
+  prefill?: {
+    type?: Transaction['type'];
+    amount?: number;
+    contact_id?: string;
+  } | null;
 }>();
 
 const emit = defineEmits<{
@@ -572,6 +577,25 @@ watch(
         reference_number: transaction.reference_number || '',
       });
     }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.prefill,
+  (prefill) => {
+    if (props.transaction || !prefill) {
+      return;
+    }
+
+    const nextType = prefill.type || values.type;
+    setValues({
+      type: nextType,
+      amount: typeof prefill.amount === 'number' ? prefill.amount : values.amount,
+      contact_id: prefill.contact_id || values.contact_id,
+      to_account_id: nextType === 'transfer' ? values.to_account_id : '',
+      category_id: ['income', 'expense'].includes(nextType || '') ? values.category_id : '',
+    });
   },
   { immediate: true }
 );
