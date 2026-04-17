@@ -134,6 +134,20 @@
           </Label>
         </div>
       </FormField>
+
+      <FormField name="is_active" v-slot="{ field }">
+        <div class="flex items-center space-x-2 pt-0 pb-0">
+          <Checkbox
+            id="is_active"
+            :model-value="field.value === true"
+            @update:model-value="(value) => field.onChange(value === true)"
+          />
+          <Label for="is_active"
+            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Active account
+          </Label>
+        </div>
+      </FormField>
     </div>
 
     <div class="flex justify-end space-x-2 pt-4 pb-4 mt-auto">
@@ -199,6 +213,7 @@ const formSchema = toTypedSchema(yup.object({
     .default('#3B82F6'),
   notes: yup.string().nullable().optional(),
   include_in_total: yup.boolean().default(true),
+  is_active: yup.boolean().default(true),
 }));
 
 const defaultValues: {
@@ -212,6 +227,7 @@ const defaultValues: {
   color: string;
   notes: string;
   include_in_total: boolean;
+  is_active: boolean;
 } = {
   name: '',
   type: 'asset',
@@ -223,6 +239,7 @@ const defaultValues: {
   color: '#3B82F6',
   notes: '',
   include_in_total: true,
+  is_active: true,
 };
 
 const { handleSubmit, resetForm, values } = useForm({
@@ -245,6 +262,7 @@ watch(
         color: account.color || '#3B82F6',
         notes: account.notes || '',
         include_in_total: account.include_in_total,
+        is_active: account.is_active,
       } });
       return;
     }

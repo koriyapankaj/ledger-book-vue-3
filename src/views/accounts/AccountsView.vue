@@ -298,13 +298,18 @@ const filters = ref({
 
 const filteredAccounts = computed(() => {
   return accounts.value.filter((account) => {
+    const isActive = account.is_active === true;
+
     if (filters.value.type !== 'all' && account.type !== filters.value.type) {
       return false;
     }
     if (filters.value.subtype !== 'all' && account.subtype !== filters.value.subtype) {
       return false;
     }
-    if (filters.value.active_only && !account.is_active) {
+    if (filters.value.active_only && !isActive) {
+      return false;
+    }
+    if (!filters.value.active_only && isActive) {
       return false;
     }
     return true;
