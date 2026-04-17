@@ -91,9 +91,10 @@
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div class="flex flex-wrap gap-4">
+          <div class="flex flex-col sm:flex-row flex-wrap gap-4">
+
             <Select v-model="filters.type">
-              <SelectTrigger class="w-[180px]">
+              <SelectTrigger class="w-full sm:w-[180px]">
                 <SelectValue placeholder="Account Type" />
               </SelectTrigger>
               <SelectContent>
@@ -104,7 +105,7 @@
             </Select>
 
             <Select v-model="filters.subtype">
-              <SelectTrigger class="w-[180px]">
+              <SelectTrigger class="w-full sm:w-[180px]">
                 <SelectValue placeholder="Subtype" />
               </SelectTrigger>
               <SelectContent>
@@ -117,7 +118,7 @@
               </SelectContent>
             </Select>
 
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
               <Checkbox
                 id="active_only"
                 :model-value="filters.active_only"
@@ -126,7 +127,10 @@
               <Label for="active_only">Active only</Label>
             </div>
 
-            <Button variant="outline" @click="resetFilters">
+            <Button
+              variant="outline"
+              class="w-full sm:w-auto"
+              @click="resetFilters">
               <X class="mr-2 h-4 w-4" />
               Reset
             </Button>
