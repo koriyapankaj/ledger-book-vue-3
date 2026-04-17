@@ -153,7 +153,8 @@
           </div>
 
           <div class="flex justify-end mt-4">
-            <Button variant="outline" @click="resetFilters">
+            <Button variant="outline" @click="resetFilters"
+            class="w-full sm:w-auto">
               <X class="mr-2 h-4 w-4" />
               Reset Filters
             </Button>
@@ -263,7 +264,7 @@
   </AuthLayout>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from '@/components/ui/toast/use-toast';
 import {
@@ -344,6 +345,9 @@ const filters = ref({
   end_date: '',
   page: 1,
 });
+
+const debouncedSearch = ref(filters.value.search);
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 const isCustomRange = computed(() => filters.value.period === 'custom');
 
@@ -485,8 +489,8 @@ const fetchTransactions = async () => {
       params.type = filters.value.type;
     }
 
-    if (filters.value.search) {
-      params.search = filters.value.search;
+    if (debouncedSearch.value) {
+      params.search = debouncedSearch.value;
     }
 
     const response = await transactionService.getAll(params);
@@ -607,6 +611,7 @@ const resetFilters = () => {
     end_date: '',
     page: 1,
   };
+  debouncedSearch.value = '';
 };
 
 const changePage = (page: number) => {
@@ -693,7 +698,7 @@ watch(
 );
 
 watch(
-  () => [filters.value.period, filters.value.type, filters.value.search, filters.value.start_date, filters.value.end_date],
+  () => [filters.value.period, filters.value.type, filters.value.start_date, filters.value.end_date],
   () => {
     if (filters.value.period === 'custom' && (!filters.value.start_date || !filters.value.end_date)) {
       return;
@@ -703,6 +708,33 @@ watch(
     fetchStatistics();
   }
 );
+
+watch(
+  () => filters.value.search,
+  (search) => {
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+    }
+
+    searchDebounceTimer = setTimeout(() => {
+      debouncedSearch.value = search;
+
+      if (filters.value.period === 'custom' && (!filters.value.start_date || !filters.value.end_date)) {
+        return;
+      }
+
+      filters.value.page = 1;
+      fetchTransactions();
+      fetchStatistics();
+    }, 500);
+  }
+);
+
+onBeforeUnmount(() => {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+});
 
 watch(isDialogOpen, (newValue) => {
   if (!newValue) {
