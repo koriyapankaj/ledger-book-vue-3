@@ -4,7 +4,13 @@
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField name="name" v-slot="{ field, errorMessage }">
           <Label for="name" :class="{ 'text-destructive': errorMessage }">Account Name <span class="text-red-500">*</span></Label>
-          <Input id="name" v-bind="field" placeholder="e.g., HDFC Savings" :class="{ 'border-destructive': errorMessage }" />
+          <Input
+            id="name"
+            :model-value="field.value"
+            @update:model-value="field.onChange"
+            placeholder="e.g., HDFC Savings"
+            :class="{ 'border-destructive': errorMessage }"
+          />
         </FormField>
 
         <FormField name="type" v-slot="{ field, errorMessage }">
@@ -38,22 +44,50 @@
 
         <FormField name="balance" v-slot="{ field, errorMessage }">
           <Label for="balance" :class="{ 'text-destructive': errorMessage }">Initial Balance</Label>
-          <Input id="balance" v-bind="field" type="number" step="0.01" placeholder="0.00" :class="{ 'border-destructive': errorMessage }" />
+          <Input
+            id="balance"
+            :model-value="field.value"
+            @update:model-value="field.onChange"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            :class="{ 'border-destructive': errorMessage }"
+          />
         </FormField>
 
         <FormField v-if="values.subtype === 'credit_card'" name="credit_limit" v-slot="{ field, errorMessage }">
           <Label for="credit_limit" :class="{ 'text-destructive': errorMessage }">Credit Limit</Label>
-          <Input id="credit_limit" v-bind="field" type="number" step="0.01" placeholder="0.00" :class="{ 'border-destructive': errorMessage }" />
+          <Input
+            id="credit_limit"
+            :model-value="field.value"
+            @update:model-value="field.onChange"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            :class="{ 'border-destructive': errorMessage }"
+          />
         </FormField>
 
         <FormField name="bank_name" v-slot="{ field, errorMessage }">
           <Label for="bank_name" :class="{ 'text-destructive': errorMessage }">Bank/Institution Name</Label>
-          <Input id="bank_name" v-bind="field" placeholder="e.g., HDFC Bank" :class="{ 'border-destructive': errorMessage }" />
+          <Input
+            id="bank_name"
+            :model-value="field.value"
+            @update:model-value="field.onChange"
+            placeholder="e.g., HDFC Bank"
+            :class="{ 'border-destructive': errorMessage }"
+          />
         </FormField>
 
         <FormField name="account_number" v-slot="{ field, errorMessage }">
           <Label for="account_number" :class="{ 'text-destructive': errorMessage }">Account Number</Label>
-          <Input id="account_number" v-bind="field" placeholder="****1234" :class="{ 'border-destructive': errorMessage }" />
+          <Input
+            id="account_number"
+            :model-value="field.value"
+            @update:model-value="field.onChange"
+            placeholder="****1234"
+            :class="{ 'border-destructive': errorMessage }"
+          />
         </FormField>
 
         <FormField name="color" v-slot="{ field, errorMessage }">
@@ -62,20 +96,38 @@
             <div class="relative">
               <Input id="color_picker" type="color" :model-value="field.value" @update:model-value="field.onChange" class="h-10 w-12 cursor-pointer p-1" :class="{ 'border-destructive': errorMessage }" />
             </div>
-            <Input id="color_input" v-bind="field" placeholder="#3B82F6" class="flex-1 font-mono uppercase" maxlength="7" :class="{ 'border-destructive': errorMessage }" />
+            <Input
+              id="color_input"
+              :model-value="field.value"
+              @update:model-value="field.onChange"
+              placeholder="#3B82F6"
+              class="flex-1 font-mono uppercase"
+              maxlength="7"
+              :class="{ 'border-destructive': errorMessage }"
+            />
           </div>
         </FormField>
       </div>
 
       <FormField name="notes" v-slot="{ field, errorMessage }">
         <Label for="notes" :class="{ 'text-destructive': errorMessage }">Notes</Label>
-        <Textarea id="notes" v-bind="field" placeholder="Additional notes about this account"
-          class="min-h-[100px] resize-y" :class="{ 'border-destructive': errorMessage }" />
+        <Textarea
+          id="notes"
+          :model-value="field.value"
+          @update:model-value="field.onChange"
+          placeholder="Additional notes about this account"
+          class="min-h-[100px] resize-y"
+          :class="{ 'border-destructive': errorMessage }"
+        />
       </FormField>
 
       <FormField name="include_in_total" v-slot="{ field }">
         <div class="flex items-center space-x-2 py-2">
-          <Checkbox id="include_in_total" :checked="field.value" @update:checked="field.onChange" />
+          <Checkbox
+            id="include_in_total"
+            :model-value="field.value === true"
+            @update:model-value="(value) => field.onChange(value === true)"
+          />
           <Label for="include_in_total"
             class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             Include in net worth calculation
@@ -90,7 +142,7 @@
       </Button>
       <Button type="submit" :disabled="submitting">
         <Loader2 v-if="submitting" class="mr-2 h-4 w-4 animate-spin" />
-        {{ account ? 'Update' : 'Create' }} Account
+        {{ props.account ? 'Update' : 'Create' }} Account
       </Button>
     </div>
   </form>
@@ -149,22 +201,40 @@ const formSchema = toTypedSchema(yup.object({
   include_in_total: yup.boolean().default(true),
 }));
 
-const { handleSubmit, setValues, values } = useForm({
+const defaultValues: {
+  name: string;
+  type: 'asset' | 'liability';
+  subtype: string;
+  balance: number;
+  credit_limit: number | undefined;
+  account_number: string;
+  bank_name: string;
+  color: string;
+  notes: string;
+  include_in_total: boolean;
+} = {
+  name: '',
+  type: 'asset',
+  subtype: 'cash',
+  balance: 0,
+  credit_limit: undefined,
+  account_number: '',
+  bank_name: '',
+  color: '#3B82F6',
+  notes: '',
+  include_in_total: true,
+};
+
+const { handleSubmit, resetForm, values } = useForm({
   validationSchema: formSchema,
-  initialValues: {
-    type: 'asset',
-    subtype: 'cash',
-    balance: 0,
-    color: '#3B82F6',
-    include_in_total: true,
-  },
+  initialValues: defaultValues,
 });
 
 watch(
   () => props.account,
   (account) => {
     if (account) {
-      setValues({
+      resetForm({ values: {
         name: account.name,
         type: account.type as 'asset' | 'liability',
         subtype: account.subtype,
@@ -172,11 +242,14 @@ watch(
         credit_limit: account.credit_limit,
         account_number: account.account_number || '',
         bank_name: account.bank_name || '',
-        color: account.color,
+        color: account.color || '#3B82F6',
         notes: account.notes || '',
         include_in_total: account.include_in_total,
-      });
+      } });
+      return;
     }
+
+    resetForm({ values: defaultValues });
   },
   { immediate: true }
 );

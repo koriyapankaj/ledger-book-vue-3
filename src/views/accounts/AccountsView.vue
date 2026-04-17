@@ -23,7 +23,7 @@
               </DialogDescription>
             </DialogHeader>
             <ScrollArea class="max-h-[70vh] -mx-6 px-6 pb-0">
-              <AccountForm :account="editingAccount" @submit="handleSubmit" @cancel="closeDialog" />
+              <AccountForm v-if="isDialogOpen" :account="editingAccount" @submit="handleSubmit" @cancel="closeDialog" />
             </ScrollArea>
           </DialogContent>
 
@@ -276,16 +276,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { accountService, type Account, type AccountSummary } from '@/services/account.service';
 
 const { toast } = useToast();
