@@ -118,7 +118,11 @@
             </Select>
 
             <div class="flex items-center space-x-2">
-              <Checkbox id="active_only" v-model:checked="filters.active_only" />
+              <Checkbox
+                id="active_only"
+                :model-value="filters.active_only"
+                @update:model-value="(value) => (filters.active_only = value === true)"
+              />
               <Label for="active_only">Active only</Label>
             </div>
 
