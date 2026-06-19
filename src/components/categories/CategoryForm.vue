@@ -1,15 +1,18 @@
 <template>
-    <form @submit.prevent="handleSubmit" class="space-y-4">
+    <form @submit="onSubmit" class="space-y-4">
         <div class="grid gap-4 md:grid-cols-2">
-            <div class="space-y-2">
-                <Label for="name">Category Name *</Label>
-                <Input id="name" v-model="form.name" placeholder="e.g., Food & Dining" required />
-            </div>
+            <FormField name="name" v-slot="{ field, errorMessage }">
+                <Label for="name" :class="{ 'text-destructive': errorMessage }">Category Name <span
+                        class="text-red-500">*</span></Label>
+                <Input id="name" :model-value="field.value" @update:model-value="field.onChange"
+                    placeholder="e.g., Food & Dining" :class="{ 'border-destructive': errorMessage }" />
+            </FormField>
 
-            <div class="space-y-2">
-                <Label for="type">Type *</Label>
-                <Select v-model="form.type" required>
-                    <SelectTrigger>
+            <FormField name="type" v-slot="{ field, errorMessage }">
+                <Label for="type" :class="{ 'text-destructive': errorMessage }">Type <span
+                        class="text-red-500">*</span></Label>
+                <Select :model-value="field.value" @update:model-value="(value) => onTypeChange(value, field)">
+                    <SelectTrigger :class="{ 'border-destructive': errorMessage }">
                         <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -17,16 +20,17 @@
                         <SelectItem value="expense">Expense</SelectItem>
                     </SelectContent>
                 </Select>
-            </div>
+            </FormField>
 
-            <div class="space-y-2">
-                <Label for="parent_id">Parent Category</Label>
-                <Select v-model="form.parent_id">
-                    <SelectTrigger>
+            <FormField name="parent_id" v-slot="{ field, errorMessage }">
+                <Label for="parent_id" :class="{ 'text-destructive': errorMessage }">Parent Category</Label>
+                <Select :model-value="field.value ?? NONE_VALUE"
+                    @update:model-value="(value) => field.onChange(value === NONE_VALUE ? null : value)">
+                    <SelectTrigger :class="{ 'border-destructive': errorMessage }">
                         <SelectValue placeholder="None (Top-level category)" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem :value="null">None</SelectItem>
+                        <SelectItem :value="NONE_VALUE">None</SelectItem>
                         <SelectItem v-for="parentCat in parentCategories" :key="parentCat.id"
                             :value="parentCat.id.toString()">
                             {{ parentCat.name }}
@@ -36,24 +40,28 @@
                 <p class="text-xs text-muted-foreground">
                     Leave empty for a main category, or select a parent to create a subcategory
                 </p>
-            </div>
+            </FormField>
 
-            <div class="space-y-2">
-                <Label for="order">Display Order</Label>
-                <Input id="order" v-model.number="form.order" type="number" min="0" placeholder="0" />
-            </div>
+            <FormField name="order" v-slot="{ field, errorMessage }">
+                <Label for="order" :class="{ 'text-destructive': errorMessage }">Display Order</Label>
+                <Input id="order" :model-value="field.value" @update:model-value="field.onChange" type="number" min="0"
+                    placeholder="0" :class="{ 'border-destructive': errorMessage }" />
+            </FormField>
 
-            <div class="space-y-2">
-                <Label for="color">Color</Label>
+            <FormField name="color" v-slot="{ field, errorMessage }">
+                <Label for="color" :class="{ 'text-destructive': errorMessage }">Color</Label>
                 <div class="flex space-x-2">
-                    <Input id="color" v-model="form.color" type="color" class="w-16 h-10" />
-                    <Input v-model="form.color" placeholder="#3B82F6" class="flex-1" />
+                    <Input id="color_picker" :model-value="field.value" @update:model-value="field.onChange"
+                        type="color" class="w-16 h-10" />
+                    <Input :model-value="field.value" @update:model-value="field.onChange" placeholder="#3B82F6"
+                        class="flex-1 font-mono uppercase" maxlength="7"
+                        :class="{ 'border-destructive': errorMessage }" />
                 </div>
-            </div>
+            </FormField>
 
-            <div class="space-y-2">
+            <FormField name="icon" v-slot="{ field }">
                 <Label for="icon">Icon</Label>
-                <Select v-model="form.icon">
+                <Select :model-value="field.value" @update:model-value="field.onChange">
                     <SelectTrigger>
                         <SelectValue placeholder="Select icon" />
                     </SelectTrigger>
@@ -66,19 +74,23 @@
                         </SelectItem>
                     </SelectContent>
                 </Select>
+            </FormField>
+        </div>
+
+        <FormField name="description" v-slot="{ field, errorMessage }">
+            <Label for="description" :class="{ 'text-destructive': errorMessage }">Description</Label>
+            <Textarea id="description" :model-value="field.value" @update:model-value="field.onChange"
+                placeholder="Brief description of this category" rows="3"
+                :class="{ 'border-destructive': errorMessage }" />
+        </FormField>
+
+        <FormField v-if="category" name="is_active" v-slot="{ field }">
+            <div class="flex items-center space-x-2">
+                <Checkbox id="is_active" :model-value="field.value === true"
+                    @update:model-value="(value) => field.onChange(value === true)" />
+                <Label for="is_active">Active</Label>
             </div>
-        </div>
-
-        <div class="space-y-2">
-            <Label for="description">Description</Label>
-            <Textarea id="description" v-model="form.description" placeholder="Brief description of this category"
-                rows="3" />
-        </div>
-
-        <div v-if="category" class="flex items-center space-x-2">
-            <Checkbox id="is_active" v-model:checked="form.is_active" />
-            <Label for="is_active">Active</Label>
-        </div>
+        </FormField>
 
         <div class="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" @click="$emit('cancel')">
@@ -93,7 +105,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, watch, ref } from 'vue';
+import { computed, watch, ref } from 'vue';
+import { useForm } from 'vee-validate';
+import { toTypedSchema } from '@vee-validate/yup';
+import * as yup from 'yup';
 import {
     Loader2,
     Tag,
@@ -126,6 +141,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FormField } from '@/components/ui/form';
 import {
     Select,
     SelectContent,
@@ -147,7 +163,25 @@ const emit = defineEmits<{
 
 const submitting = ref(false);
 
-const form = reactive({
+// Sentinel used by the reka-ui Select to represent "no parent" (it cannot use an empty string value).
+const NONE_VALUE = '__none__';
+
+const formSchema = toTypedSchema(yup.object({
+    name: yup.string().required('Category name is required').max(255, 'Name must be 255 characters or less'),
+    type: yup.string().oneOf(['income', 'expense'], 'Type must be income or expense').required('Category type is required'),
+    parent_id: yup.string().nullable().optional(),
+    color: yup.string().matches(/^#([0-9A-Fa-f]{3}){1,2}$/, 'Enter a valid hex color (e.g. #3B82F6)').default('#3B82F6'),
+    icon: yup.string().default('tag'),
+    order: yup.number()
+        .transform((value, originalValue) => (String(originalValue).trim() === '' ? 0 : value))
+        .typeError('Order must be a number')
+        .min(0, 'Order must be 0 or more')
+        .default(0),
+    description: yup.string().nullable().max(1000, 'Description must be 1000 characters or less').optional(),
+    is_active: yup.boolean().default(true),
+}));
+
+const defaultValues = {
     name: '',
     type: 'expense' as 'income' | 'expense',
     parent_id: null as string | null,
@@ -156,12 +190,17 @@ const form = reactive({
     order: 0,
     description: '',
     is_active: true,
+};
+
+const { handleSubmit, resetForm, values, setFieldValue } = useForm({
+    validationSchema: formSchema,
+    initialValues: defaultValues,
 });
 
 const parentCategories = computed(() => {
     return props.categories.filter(
         (cat) =>
-            cat.type === form.type &&
+            cat.type === values.type &&
             !cat.parent_id &&
             (!props.category || cat.id !== props.category.id)
     );
@@ -194,48 +233,64 @@ const iconOptions = [
     { value: 'more-horizontal', label: 'More', icon: MoreHorizontal },
 ];
 
+// Changing the type makes a previously selected parent (of the other type) invalid, so clear it.
+// This only runs on user interaction, not when loading an existing category.
+const onTypeChange = (value: any, field: { onChange: (v: any) => void }) => {
+    field.onChange(value);
+    setFieldValue('parent_id', null);
+};
+
 watch(
     () => props.category,
     (category) => {
         if (category) {
-            Object.assign(form, {
-                name: category.name,
-                type: category.type,
-                parent_id: category.parent_id?.toString() || null,
-                color: category.color,
-                icon: category.icon,
-                order: category.order,
-                description: category.description || '',
-                is_active: category.is_active,
+            resetForm({
+                values: {
+                    name: category.name,
+                    type: category.type,
+                    parent_id: category.parent_id?.toString() ?? null,
+                    color: category.color || '#3B82F6',
+                    icon: category.icon || 'tag',
+                    order: category.order ?? 0,
+                    description: category.description || '',
+                    is_active: category.is_active,
+                },
             });
+            return;
         }
+
+        resetForm({ values: defaultValues });
     },
     { immediate: true }
 );
 
-const handleSubmit = async () => {
+const onSubmit = handleSubmit(async (formValues) => {
+    if (submitting.value) return;
+
     submitting.value = true;
     try {
         const data: any = {
-            name: form.name,
-            type: form.type,
-            color: form.color,
-            icon: form.icon,
-            order: form.order,
-            description: form.description || null,
+            name: formValues.name,
+            type: formValues.type,
+            color: formValues.color,
+            icon: formValues.icon,
+            order: formValues.order,
+            description: formValues.description || null,
         };
 
-        if (form.parent_id !== null && form.parent_id !== '') {
-            data.parent_id = parseInt(form.parent_id);
+        if (formValues.parent_id !== null && formValues.parent_id !== undefined && formValues.parent_id !== '') {
+            data.parent_id = parseInt(formValues.parent_id as string);
+        } else {
+            data.parent_id = null;
         }
 
         if (props.category) {
-            data.is_active = form.is_active;
+            data.is_active = formValues.is_active;
         }
 
         emit('submit', data);
     } finally {
         submitting.value = false;
     }
-};
+});
 </script>

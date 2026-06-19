@@ -1,32 +1,40 @@
 <template>
-    <form @submit.prevent="handleSubmit" class="space-y-4">
-        <div class="space-y-2">
-            <Label for="name">Name *</Label>
-            <Input id="name" v-model="form.name" placeholder="e.g., John Doe" required />
-        </div>
+    <form @submit="onSubmit" class="space-y-4">
+        <FormField name="name" v-slot="{ field, errorMessage }">
+            <Label for="name" :class="{ 'text-destructive': errorMessage }">Name <span
+                    class="text-red-500">*</span></Label>
+            <Input id="name" :model-value="field.value" @update:model-value="field.onChange" placeholder="e.g., John Doe"
+                :class="{ 'border-destructive': errorMessage }" />
+        </FormField>
 
         <div class="grid gap-4 md:grid-cols-2">
-            <div class="space-y-2">
-                <Label for="email">Email</Label>
-                <Input id="email" v-model="form.email" type="email" placeholder="john@example.com" />
+            <FormField name="email" v-slot="{ field, errorMessage }">
+                <Label for="email" :class="{ 'text-destructive': errorMessage }">Email</Label>
+                <Input id="email" :model-value="field.value" @update:model-value="field.onChange" type="email"
+                    placeholder="john@example.com" :class="{ 'border-destructive': errorMessage }" />
+            </FormField>
+
+            <FormField name="phone" v-slot="{ field, errorMessage }">
+                <Label for="phone" :class="{ 'text-destructive': errorMessage }">Phone</Label>
+                <Input id="phone" :model-value="field.value" @update:model-value="field.onChange" type="tel"
+                    placeholder="+91 98765 43210" :class="{ 'border-destructive': errorMessage }" />
+            </FormField>
+        </div>
+
+        <FormField name="notes" v-slot="{ field, errorMessage }">
+            <Label for="notes" :class="{ 'text-destructive': errorMessage }">Notes</Label>
+            <Textarea id="notes" :model-value="field.value" @update:model-value="field.onChange"
+                placeholder="Additional information about this contact" rows="3"
+                :class="{ 'border-destructive': errorMessage }" />
+        </FormField>
+
+        <FormField v-if="contact" name="is_active" v-slot="{ field }">
+            <div class="flex items-center space-x-2">
+                <Checkbox id="is_active" :model-value="field.value === true"
+                    @update:model-value="(value) => field.onChange(value === true)" />
+                <Label for="is_active">Active</Label>
             </div>
-
-            <div class="space-y-2">
-                <Label for="phone">Phone</Label>
-                <Input id="phone" v-model="form.phone" type="tel" placeholder="+91 98765 43210" />
-            </div>
-        </div>
-
-        <div class="space-y-2">
-            <Label for="notes">Notes</Label>
-            <Textarea id="notes" v-model="form.notes" placeholder="Additional information about this contact"
-                rows="3" />
-        </div>
-
-        <div v-if="contact" class="flex items-center space-x-2">
-            <Checkbox id="is_active" v-model:checked="form.is_active" />
-            <Label for="is_active">Active</Label>
-        </div>
+        </FormField>
 
         <div class="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" @click="$emit('cancel')">
@@ -41,13 +49,17 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, watch, ref } from 'vue';
+import { watch, ref } from 'vue';
+import { useForm } from 'vee-validate';
+import { toTypedSchema } from '@vee-validate/yup';
+import * as yup from 'yup';
 import { Loader2 } from 'lucide-vue-next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FormField } from '@/components/ui/form';
 import type { Contact } from '@/services/contact.service';
 
 const props = defineProps<{
@@ -61,47 +73,67 @@ const emit = defineEmits<{
 
 const submitting = ref(false);
 
-const form = reactive({
+const formSchema = toTypedSchema(yup.object({
+    name: yup.string().required('Contact name is required').max(255, 'Name must be 255 characters or less'),
+    email: yup.string().email('Please enter a valid email address').max(255, 'Email must be 255 characters or less').nullable().optional(),
+    phone: yup.string().max(20, 'Phone must be 20 characters or less').nullable().optional(),
+    notes: yup.string().max(1000, 'Notes must be 1000 characters or less').nullable().optional(),
+    is_active: yup.boolean().default(true),
+}));
+
+const defaultValues = {
     name: '',
     email: '',
     phone: '',
     notes: '',
     is_active: true,
+};
+
+const { handleSubmit, resetForm } = useForm({
+    validationSchema: formSchema,
+    initialValues: defaultValues,
 });
 
 watch(
     () => props.contact,
     (contact) => {
         if (contact) {
-            Object.assign(form, {
-                name: contact.name,
-                email: contact.email || '',
-                phone: contact.phone || '',
-                notes: contact.notes || '',
-                is_active: contact.is_active,
+            resetForm({
+                values: {
+                    name: contact.name,
+                    email: contact.email || '',
+                    phone: contact.phone || '',
+                    notes: contact.notes || '',
+                    is_active: contact.is_active,
+                },
             });
+            return;
         }
+
+        resetForm({ values: defaultValues });
     },
     { immediate: true }
 );
 
-const handleSubmit = async () => {
+const onSubmit = handleSubmit(async (formValues) => {
+    if (submitting.value) return;
+
     submitting.value = true;
     try {
         const data: any = {
-            name: form.name,
-            email: form.email || null,
-            phone: form.phone || null,
-            notes: form.notes || null,
+            name: formValues.name,
+            email: formValues.email || null,
+            phone: formValues.phone || null,
+            notes: formValues.notes || null,
         };
 
         if (props.contact) {
-            data.is_active = form.is_active;
+            data.is_active = formValues.is_active;
         }
 
         emit('submit', data);
     } finally {
         submitting.value = false;
     }
-};
+});
 </script>

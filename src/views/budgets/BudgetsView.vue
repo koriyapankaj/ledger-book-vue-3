@@ -85,8 +85,7 @@
             </Select>
 
             <div class="flex items-center space-x-2">
-              <Checkbox id="active_only" :checked="filters.active_only"
-                @update:checked="filters.active_only = $event" />
+              <Checkbox id="active_only" v-model="filters.active_only" />
               <Label for="active_only">Active only</Label>
             </div>
 

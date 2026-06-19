@@ -136,6 +136,39 @@
               </SelectContent>
             </Select>
 
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="outline" class="w-full justify-between font-normal">
+                  <span class="flex items-center truncate">
+                    <ListFilter class="mr-2 h-4 w-4 shrink-0" />
+                    {{ selectedCategoryCount > 0
+                      ? `${selectedCategoryCount} ${selectedCategoryCount === 1 ? 'category' : 'categories'}`
+                      : 'Categories' }}
+                  </span>
+                  <ChevronDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent class="w-64 max-h-[320px] overflow-y-auto" align="start">
+                <div class="flex items-center justify-between px-2 py-1.5">
+                  <DropdownMenuLabel class="p-0">Filter by category</DropdownMenuLabel>
+                  <Button v-if="selectedCategoryCount > 0" variant="ghost" size="sm"
+                    class="h-auto px-2 py-0.5 text-xs" @click="clearCategoryFilter">
+                    Clear
+                  </Button>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem v-for="option in categoryFilterOptions" :key="option.id"
+                  :model-value="isCategorySelected(option.id)" @update:model-value="() => toggleCategory(option.id)"
+                  @select="onCategorySelect" :class="option.isChild ? 'pl-8 text-muted-foreground' : 'font-medium'">
+                  {{ option.name }}
+                </DropdownMenuCheckboxItem>
+                <div v-if="categoryFilterOptions.length === 0"
+                  class="px-2 py-4 text-center text-sm text-muted-foreground">
+                  No categories found
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Input v-model="filters.search" placeholder="Search transactions..." class="sm:col-span-2 md:col-span-2" />
 
             <template v-if="isCustomRange">
@@ -152,9 +185,18 @@
             </template>
           </div>
 
-          <div class="flex justify-end mt-4">
-            <Button variant="outline" @click="resetFilters"
-            class="w-full sm:w-auto">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <Badge v-if="filters.contact_id" variant="secondary" class="gap-1 py-1 pl-2 pr-1">
+                <Users class="h-3 w-3" />
+                <span>{{ contactFilterName ? `Contact: ${contactFilterName}` : 'Filtered by contact' }}</span>
+                <button type="button" class="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                  @click="clearContactFilter">
+                  <X class="h-3 w-3" />
+                </button>
+              </Badge>
+            </div>
+            <Button variant="outline" @click="resetFilters" class="w-full sm:w-auto">
               <X class="mr-2 h-4 w-4" />
               Reset Filters
             </Button>
@@ -283,6 +325,8 @@ import {
   ArrowRightLeft,
   HandCoins,
   Users,
+  ListFilter,
+  ChevronDown,
 } from 'lucide-vue-next';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import TransactionForm from '@/components/transactions/TransactionForm.vue';
@@ -301,10 +345,14 @@ import {
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -317,6 +365,8 @@ import {
   type Transaction,
   type TransactionStatistics,
 } from '@/services/transaction.service';
+import { categoryService, type Category } from '@/services/category.service';
+import { contactService } from '@/services/contact.service';
 import { useAuthStore } from '@/stores/auth';
 
 const { toast } = useToast();
@@ -336,6 +386,8 @@ const newTransactionPrefill = ref<{
   contact_id?: string;
 } | null>(null);
 const period = ref('month');
+const categories = ref<Category[]>([]);
+const contactFilterName = ref('');
 
 const filters = ref({
   period: 'month',
@@ -344,6 +396,8 @@ const filters = ref({
   start_date: '',
   end_date: '',
   page: 1,
+  category_ids: [] as number[],
+  contact_id: '' as string,
 });
 
 const debouncedSearch = ref(filters.value.search);
@@ -435,6 +489,103 @@ const openTransactionDialogFromQuery = () => {
   isDialogOpen.value = true;
 };
 
+// --- Category multi-select filter ---
+const categoryFilterOptions = computed(() => {
+  const options: { id: number; name: string; isChild: boolean }[] = [];
+  for (const parent of categories.value.filter((c) => !c.parent_id)) {
+    options.push({ id: parent.id, name: parent.name, isChild: false });
+    for (const child of parent.children ?? []) {
+      options.push({ id: child.id, name: child.name, isChild: true });
+    }
+  }
+  return options;
+});
+
+// Keep the dropdown open while toggling multiple categories.
+const onCategorySelect = (event: Event) => {
+  event.preventDefault();
+};
+
+const selectedCategoryCount = computed(() => filters.value.category_ids.length);
+
+const isCategorySelected = (id: number) => filters.value.category_ids.includes(id);
+
+const toggleCategory = (id: number) => {
+  const index = filters.value.category_ids.indexOf(id);
+  if (index === -1) {
+    filters.value.category_ids.push(id);
+  } else {
+    filters.value.category_ids.splice(index, 1);
+  }
+};
+
+const clearCategoryFilter = () => {
+  filters.value.category_ids = [];
+};
+
+const fetchCategories = async () => {
+  try {
+    const response = await categoryService.getAll();
+    categories.value = response.categories;
+  } catch (error) {
+    console.error('Failed to fetch categories', error);
+  }
+};
+
+// --- Contact filter (set when arriving from a contact's "View Transactions") ---
+const fetchContactFilterName = async (id: string) => {
+  try {
+    const response = await contactService.getById(Number(id));
+    contactFilterName.value = response.contact.name;
+  } catch {
+    contactFilterName.value = '';
+  }
+};
+
+// Remove the link-based filter params from the URL without touching other query keys.
+const stripFilterQuery = async () => {
+  if (!route.query.category_id && !route.query.contact_id) {
+    return;
+  }
+
+  const query = { ...route.query };
+  delete query.category_id;
+  delete query.contact_id;
+  await router.replace({ query });
+};
+
+const clearContactFilter = () => {
+  filters.value.contact_id = '';
+  contactFilterName.value = '';
+  void stripFilterQuery();
+};
+
+// Read contact_id / category_id from the URL into the active filters.
+// Skipped when ?new=true (that query is for pre-filling the new-transaction dialog).
+const initFiltersFromQuery = () => {
+  if (route.query.new === 'true') {
+    return;
+  }
+
+  const categoryId = route.query.category_id;
+  if (typeof categoryId === 'string' && categoryId) {
+    const id = Number(categoryId);
+    if (Number.isFinite(id)) {
+      filters.value.category_ids = [id];
+    }
+  }
+
+  const contactId = route.query.contact_id;
+  if (typeof contactId === 'string' && contactId) {
+    filters.value.contact_id = contactId;
+    fetchContactFilterName(contactId);
+  }
+};
+
+// Apply URL filters synchronously during setup, before the watchers below are
+// registered, so arriving via a filter link only triggers a single fetch.
+initFiltersFromQuery();
+
 const displayedTransactions = computed(() => {
   if (filters.value.period === 'custom') {
     if (!filters.value.start_date || !filters.value.end_date) {
@@ -487,6 +638,14 @@ const fetchTransactions = async () => {
 
     if (filters.value.type !== 'all') {
       params.type = filters.value.type;
+    }
+
+    if (filters.value.category_ids.length > 0) {
+      params.category_ids = filters.value.category_ids;
+    }
+
+    if (filters.value.contact_id) {
+      params.contact_id = filters.value.contact_id;
     }
 
     if (debouncedSearch.value) {
@@ -563,7 +722,6 @@ const handleSubmit = async (formData: any) => {
 
 const viewTransaction = (transaction: Transaction) => {
   // You can implement a detail view here
-  console.log('View transaction:', transaction);
 };
 
 const editTransaction = (transaction: Transaction) => {
@@ -610,8 +768,12 @@ const resetFilters = () => {
     start_date: '',
     end_date: '',
     page: 1,
+    category_ids: [],
+    contact_id: '',
   };
   debouncedSearch.value = '';
+  contactFilterName.value = '';
+  void stripFilterQuery();
 };
 
 const changePage = (page: number) => {
@@ -685,6 +847,7 @@ const getAmountPrefix = (type: string) => {
 };
 
 onMounted(() => {
+  fetchCategories();
   fetchTransactions();
   fetchStatistics();
   openTransactionDialogFromQuery();
@@ -693,12 +856,20 @@ onMounted(() => {
 watch(
   () => route.query,
   () => {
+    initFiltersFromQuery();
     openTransactionDialogFromQuery();
   }
 );
 
 watch(
-  () => [filters.value.period, filters.value.type, filters.value.start_date, filters.value.end_date],
+  () => [
+    filters.value.period,
+    filters.value.type,
+    filters.value.start_date,
+    filters.value.end_date,
+    filters.value.category_ids.join(','),
+    filters.value.contact_id,
+  ],
   () => {
     if (filters.value.period === 'custom' && (!filters.value.start_date || !filters.value.end_date)) {
       return;

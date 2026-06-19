@@ -1,109 +1,91 @@
 <template>
-    <form @submit.prevent="handleSubmit" class="space-y-4">
+    <form @submit="onSubmit" class="space-y-4">
         <div class="grid gap-4 md:grid-cols-2">
             <!-- Category Selection -->
-            <div class="space-y-2 md:col-span-2">
-                <Label for="category_id">Category *</Label>
-                <Select
-                    :model-value="form.category_id"
-                    @update:model-value="handleCategoryChange"
-                    required
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <div v-for="category in expenseCategories" :key="category.id">
-                            <!-- Parent Category -->
-                            <SelectItem :value="category.id.toString()" class="font-semibold">
-                                <div class="flex items-center justify-between w-full">
-                                    <div class="flex items-center">
-                                        <component :is="getCategoryIcon(category.icon)" class="mr-2 h-4 w-4" />
-                                        {{ category.name }}
+            <FormField name="category_id" v-slot="{ field, errorMessage }">
+                <div class="md:col-span-2 space-y-2">
+                    <Label for="category_id" :class="{ 'text-destructive': errorMessage }">Category <span
+                            class="text-red-500">*</span></Label>
+                    <Select :model-value="field.value" @update:model-value="handleCategoryChange">
+                        <SelectTrigger :class="{ 'border-destructive': errorMessage }">
+                            <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <div v-for="category in expenseCategories" :key="category.id">
+                                <!-- Parent Category -->
+                                <SelectItem :value="category.id.toString()" class="font-semibold">
+                                    <div class="flex items-center justify-between w-full">
+                                        <div class="flex items-center">
+                                            <component :is="getCategoryIcon(category.icon)" class="mr-2 h-4 w-4" />
+                                            {{ category.name }}
+                                        </div>
+                                        <Badge v-if="category.has_children" variant="outline" class="ml-2 text-xs">
+                                            Has subcategories
+                                        </Badge>
                                     </div>
-                                    <Badge v-if="category.has_children" variant="outline" class="ml-2 text-xs">
-                                        Has subcategories
-                                    </Badge>
-                                </div>
-                            </SelectItem>
-                            <!-- Child Categories -->
-                            <SelectItem
-                                v-for="child in category.children"
-                                :key="child.id"
-                                :value="child.id.toString()"
-                                class="pl-8"
-                            >
-                                {{ child.name }}
-                            </SelectItem>
-                        </div>
-                    </SelectContent>
-                </Select>
-                <p class="text-xs text-muted-foreground">
-                    Select the expense category you want to set a budget for
-                </p>
-            </div>
+                                </SelectItem>
+                                <!-- Child Categories -->
+                                <SelectItem v-for="child in category.children" :key="child.id"
+                                    :value="child.id.toString()" class="pl-8">
+                                    {{ child.name }}
+                                </SelectItem>
+                            </div>
+                        </SelectContent>
+                    </Select>
+                    <p class="text-xs text-muted-foreground">
+                        Select the expense category you want to set a budget for
+                    </p>
+                </div>
+            </FormField>
 
             <!-- Include Subcategories Checkbox (Only for parent categories with children) -->
-            <div v-if="selectedCategoryHasChildren" class="md:col-span-2 space-y-2">
-                <div class="flex items-start space-x-3 p-4 rounded-lg border-2 border-dashed bg-muted/50 hover:bg-muted/80 transition-colors">
-                    <Checkbox
-                        id="include_subcategories"
-                        :checked="form.include_subcategories"
-                        @update:checked="form.include_subcategories = $event"
-                        class="mt-1"
-                    />
-                    <div class="flex-1 space-y-1.5">
-                        <Label for="include_subcategories" class="text-sm font-medium cursor-pointer flex items-center">
-                            <Layers class="w-4 h-4 mr-2" />
-                            Include subcategory expenses
-                        </Label>
-                        <p class="text-xs text-muted-foreground leading-relaxed">
-                            When enabled, expenses from all subcategories will count toward this budget.
-                        </p>
-                        <div v-if="form.include_subcategories && subcategoryNames" class="mt-2 pt-2 border-t">
-                            <p class="text-xs font-medium text-foreground mb-1">Included subcategories:</p>
-                            <div class="flex flex-wrap gap-1">
-                                <Badge
-                                    v-for="(name, index) in subcategoryNamesList"
-                                    :key="index"
-                                    variant="secondary"
-                                    class="text-xs"
-                                >
-                                    {{ name }}
-                                </Badge>
+            <FormField v-if="selectedCategoryHasChildren" name="include_subcategories" v-slot="{ field }">
+                <div class="md:col-span-2 space-y-2">
+                    <div
+                        class="flex items-start space-x-3 p-4 rounded-lg border-2 border-dashed bg-muted/50 hover:bg-muted/80 transition-colors">
+                        <Checkbox id="include_subcategories" :model-value="field.value === true"
+                            @update:model-value="(value) => field.onChange(value === true)" class="mt-1" />
+                        <div class="flex-1 space-y-1.5">
+                            <Label for="include_subcategories"
+                                class="text-sm font-medium cursor-pointer flex items-center">
+                                <Layers class="w-4 h-4 mr-2" />
+                                Include subcategory expenses
+                            </Label>
+                            <p class="text-xs text-muted-foreground leading-relaxed">
+                                When enabled, expenses from all subcategories will count toward this budget.
+                            </p>
+                            <div v-if="field.value && subcategoryNames" class="mt-2 pt-2 border-t">
+                                <p class="text-xs font-medium text-foreground mb-1">Included subcategories:</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <Badge v-for="(name, index) in subcategoryNamesList" :key="index" variant="secondary"
+                                        class="text-xs">
+                                        {{ name }}
+                                    </Badge>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </FormField>
 
             <!-- Amount -->
-            <div class="space-y-2">
-                <Label for="amount">Budget Amount *</Label>
+            <FormField name="amount" v-slot="{ field, errorMessage }">
+                <Label for="amount" :class="{ 'text-destructive': errorMessage }">Budget Amount <span
+                        class="text-red-500">*</span></Label>
                 <div class="relative">
                     <span class="absolute left-3 top-2.5 text-muted-foreground">₹</span>
-                    <Input
-                        id="amount"
-                        v-model.number="form.amount"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        class="pl-8"
-                        placeholder="0.00"
-                        required
-                    />
+                    <Input id="amount" :model-value="field.value" @update:model-value="field.onChange" type="number"
+                        step="0.01" min="0.01" class="pl-8" placeholder="0.00"
+                        :class="{ 'border-destructive': errorMessage }" />
                 </div>
-            </div>
+            </FormField>
 
             <!-- Period -->
-            <div class="space-y-2">
-                <Label for="period">Period *</Label>
-                <Select
-                    :model-value="form.period"
-                    @update:model-value="(value) => form.period = value as 'daily' | 'weekly' | 'monthly' | 'yearly'"
-                    required
-                >
-                    <SelectTrigger>
+            <FormField name="period" v-slot="{ field, errorMessage }">
+                <Label for="period" :class="{ 'text-destructive': errorMessage }">Period <span
+                        class="text-red-500">*</span></Label>
+                <Select :model-value="field.value" @update:model-value="field.onChange">
+                    <SelectTrigger :class="{ 'border-destructive': errorMessage }">
                         <SelectValue placeholder="Select period" />
                     </SelectTrigger>
                     <SelectContent>
@@ -113,29 +95,35 @@
                         <SelectItem value="yearly">Yearly</SelectItem>
                     </SelectContent>
                 </Select>
-            </div>
+            </FormField>
 
             <!-- Start Date -->
-            <div class="space-y-2">
-                <Label for="start_date">Start Date *</Label>
-                <Input id="start_date" v-model="form.start_date" type="date" required />
-            </div>
+            <FormField name="start_date" v-slot="{ field, errorMessage }">
+                <Label for="start_date" :class="{ 'text-destructive': errorMessage }">Start Date <span
+                        class="text-red-500">*</span></Label>
+                <Input id="start_date" :model-value="field.value" @update:model-value="field.onChange" type="date"
+                    :class="{ 'border-destructive': errorMessage }" />
+            </FormField>
 
             <!-- End Date -->
-            <div class="space-y-2">
-                <Label for="end_date">End Date</Label>
-                <Input id="end_date" v-model="form.end_date" type="date" :min="form.start_date" />
+            <FormField name="end_date" v-slot="{ field, errorMessage }">
+                <Label for="end_date" :class="{ 'text-destructive': errorMessage }">End Date</Label>
+                <Input id="end_date" :model-value="field.value" @update:model-value="field.onChange" type="date"
+                    :min="values.start_date" :class="{ 'border-destructive': errorMessage }" />
                 <p class="text-xs text-muted-foreground">
                     Leave empty for recurring budget
                 </p>
-            </div>
+            </FormField>
         </div>
 
         <!-- Active Checkbox (only when editing) -->
-        <div v-if="budget" class="flex items-center space-x-2">
-            <Checkbox id="is_active" :checked="form.is_active" @update:checked="form.is_active = $event" />
-            <Label for="is_active">Active</Label>
-        </div>
+        <FormField v-if="budget" name="is_active" v-slot="{ field }">
+            <div class="flex items-center space-x-2">
+                <Checkbox id="is_active" :model-value="field.value === true"
+                    @update:model-value="(value) => field.onChange(value === true)" />
+                <Label for="is_active">Active</Label>
+            </div>
+        </FormField>
 
         <!-- Budget Preview -->
         <Card class="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
@@ -150,7 +138,7 @@
                     <span class="text-muted-foreground">Category:</span>
                     <div class="text-right">
                         <span class="font-medium">{{ getSelectedCategoryName() }}</span>
-                        <div v-if="form.include_subcategories && subcategoryNames" class="mt-1">
+                        <div v-if="values.include_subcategories && subcategoryNames" class="mt-1">
                             <Badge variant="outline" class="text-xs">
                                 + {{ subcategoryCount }} subcategories
                             </Badge>
@@ -158,7 +146,7 @@
                     </div>
                 </div>
 
-                <div v-if="form.include_subcategories && subcategoryNames" class="flex justify-between items-start">
+                <div v-if="values.include_subcategories && subcategoryNames" class="flex justify-between items-start">
                     <span class="text-muted-foreground text-xs">Includes:</span>
                     <span class="font-medium text-xs text-right max-w-[200px]">{{ subcategoryNames }}</span>
                 </div>
@@ -167,19 +155,19 @@
 
                 <div class="flex justify-between items-center">
                     <span class="text-muted-foreground">Budget Amount:</span>
-                    <span class="font-bold text-xl text-primary">₹{{ formatNumber(form.amount || 0) }}</span>
+                    <span class="font-bold text-xl text-primary">₹{{ formatNumber(Number(values.amount) || 0) }}</span>
                 </div>
 
                 <div class="flex justify-between">
                     <span class="text-muted-foreground">Period:</span>
-                    <span class="font-medium">{{ formatPeriod(form.period) }}</span>
+                    <span class="font-medium">{{ formatPeriod(values.period) }}</span>
                 </div>
 
                 <div class="flex justify-between">
                     <span class="text-muted-foreground">Duration:</span>
                     <span class="font-medium text-xs">
-                        {{ form.start_date }}
-                        <span v-if="form.end_date"> to {{ form.end_date }}</span>
+                        {{ values.start_date }}
+                        <span v-if="values.end_date"> to {{ values.end_date }}</span>
                         <span v-else class="text-muted-foreground"> (recurring)</span>
                     </span>
                 </div>
@@ -200,7 +188,7 @@
             <Button type="button" variant="outline" @click="$emit('cancel')" :disabled="submitting">
                 Cancel
             </Button>
-            <Button type="submit" :disabled="submitting || !isFormValid">
+            <Button type="submit" :disabled="submitting">
                 <Loader2 v-if="submitting" class="mr-2 h-4 w-4 animate-spin" />
                 {{ budget ? 'Update' : 'Create' }} Budget
             </Button>
@@ -209,7 +197,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, watch, onMounted, ref } from 'vue';
+import { computed, watch, onMounted, ref } from 'vue';
+import { useForm } from 'vee-validate';
+import { toTypedSchema } from '@vee-validate/yup';
+import * as yup from 'yup';
 import {
     Loader2,
     Tag,
@@ -238,6 +229,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form';
 import {
     Select,
     SelectContent,
@@ -263,14 +255,40 @@ const categories = ref<Category[]>([]);
 
 const today = new Date().toISOString().split('T')[0];
 
-const form = reactive({
+const formSchema = toTypedSchema(yup.object({
+    category_id: yup.string().required('Please select a category'),
+    amount: yup.number()
+        .transform((value, originalValue) => (String(originalValue).trim() === '' ? undefined : value))
+        .typeError('Amount must be a number')
+        .positive('Amount must be greater than 0')
+        .required('Budget amount is required'),
+    period: yup.string().oneOf(['daily', 'weekly', 'monthly', 'yearly'], 'Invalid period').required('Period is required'),
+    start_date: yup.string().required('Start date is required'),
+    end_date: yup.string().nullable()
+        .test('after-start', 'End date must be after the start date', function (value) {
+            if (!value) return true;
+            const start = this.parent.start_date;
+            if (!start) return true;
+            return new Date(value) > new Date(start);
+        })
+        .optional(),
+    include_subcategories: yup.boolean().default(false),
+    is_active: yup.boolean().default(true),
+}));
+
+const defaultValues = {
     category_id: '',
-    amount: 0,
+    amount: undefined as number | undefined,
     period: 'monthly' as 'daily' | 'weekly' | 'monthly' | 'yearly',
     start_date: today,
     end_date: '',
     include_subcategories: false,
     is_active: true,
+};
+
+const { handleSubmit, resetForm, values, setFieldValue } = useForm({
+    validationSchema: formSchema,
+    initialValues: defaultValues,
 });
 
 const expenseCategories = computed(() => {
@@ -278,16 +296,16 @@ const expenseCategories = computed(() => {
 });
 
 const selectedCategory = computed(() => {
-    if (!form.category_id) return null;
+    if (!values.category_id) return null;
 
     // Check parent categories
-    const parent = categories.value.find((c) => c.id.toString() === form.category_id);
+    const parent = categories.value.find((c) => c.id.toString() === values.category_id);
     if (parent) return parent;
 
     // Check child categories
     for (const category of categories.value) {
         if (category.children) {
-            const child = category.children.find((c) => c.id.toString() === form.category_id);
+            const child = category.children.find((c) => c.id.toString() === values.category_id);
             if (child) return child;
         }
     }
@@ -316,10 +334,6 @@ const subcategoryCount = computed(() => {
     return selectedCategory.value.children.length;
 });
 
-const isFormValid = computed(() => {
-    return form.category_id && form.amount > 0 && form.period && form.start_date;
-});
-
 const fetchCategories = async () => {
     try {
         const response = await categoryService.getAll({ type: 'expense', active_only: true });
@@ -329,27 +343,24 @@ const fetchCategories = async () => {
     }
 };
 
-// FIX: Updated type signature to accept AcceptableValue from reka-ui
 const handleCategoryChange = (value: AcceptableValue) => {
     const stringValue = value !== null && value !== undefined ? String(value) : '';
-    form.category_id = stringValue;
+    setFieldValue('category_id', stringValue);
 
-    // Reset include_subcategories when changing category
+    // If it's a child category or a parent without children, force-disable subcategories.
     const category = categories.value.find((c) => c.id.toString() === stringValue);
-
-    // If it's a child category or parent without children, disable subcategories checkbox
     if (!category || !category.has_children || category.parent_id) {
-        form.include_subcategories = false;
+        setFieldValue('include_subcategories', false);
     }
 };
 
 const getSelectedCategoryName = () => {
-    const category = categories.value.find((c) => c.id.toString() === form.category_id);
+    const category = categories.value.find((c) => c.id.toString() === values.category_id);
     if (category) return category.name;
 
     for (const parent of categories.value) {
         if (parent.children) {
-            const child = parent.children.find((c) => c.id.toString() === form.category_id);
+            const child = parent.children.find((c) => c.id.toString() === values.category_id);
             if (child) return child.name;
         }
     }
@@ -361,7 +372,8 @@ const formatNumber = (num: number) => {
     return new Intl.NumberFormat('en-IN').format(num);
 };
 
-const formatPeriod = (period: string) => {
+const formatPeriod = (period: string | undefined) => {
+    if (!period) return '';
     return period.charAt(0).toUpperCase() + period.slice(1);
 };
 
@@ -389,50 +401,48 @@ watch(
     () => props.budget,
     (budget) => {
         if (budget) {
-            form.category_id = budget.category_id.toString();
-            form.amount = budget.amount;
-            form.period = budget.period;
-            form.start_date = budget.start_date;
-            form.end_date = budget.end_date || '';
-            form.include_subcategories = budget.include_subcategories || false;
-            form.is_active = budget.is_active;
-        } else {
-            // Reset form for new budget
-            form.category_id = '';
-            form.amount = 0;
-            form.period = 'monthly';
-            form.start_date = today;
-            form.end_date = '';
-            form.include_subcategories = false;
-            form.is_active = true;
+            resetForm({
+                values: {
+                    category_id: budget.category_id.toString(),
+                    amount: budget.amount,
+                    period: budget.period,
+                    start_date: budget.start_date,
+                    end_date: budget.end_date || '',
+                    include_subcategories: budget.include_subcategories || false,
+                    is_active: budget.is_active,
+                },
+            });
+            return;
         }
+
+        resetForm({ values: defaultValues });
     },
     { immediate: true }
 );
 
-const handleSubmit = async () => {
-    if (!isFormValid.value) return;
+const onSubmit = handleSubmit(async (formValues) => {
+    if (submitting.value) return;
 
     submitting.value = true;
     try {
         const data: any = {
-            category_id: parseInt(form.category_id),
-            amount: form.amount,
-            period: form.period,
-            start_date: form.start_date,
-            end_date: form.end_date || null,
-            include_subcategories: Boolean(form.include_subcategories),
+            category_id: parseInt(formValues.category_id as string),
+            amount: formValues.amount,
+            period: formValues.period,
+            start_date: formValues.start_date,
+            end_date: formValues.end_date || null,
+            include_subcategories: Boolean(formValues.include_subcategories),
         };
 
         if (props.budget) {
-            data.is_active = form.is_active;
+            data.is_active = formValues.is_active;
         }
 
         emit('submit', data);
     } finally {
         submitting.value = false;
     }
-};
+});
 
 onMounted(() => {
     fetchCategories();

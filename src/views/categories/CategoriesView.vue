@@ -48,12 +48,12 @@
             </Select>
 
             <div class="flex items-center space-x-2">
-              <Checkbox id="parent_only" v-model:checked="filters.parent_only" />
+              <Checkbox id="parent_only" v-model="filters.parent_only" />
               <Label for="parent_only">Parent categories only</Label>
             </div>
 
             <div class="flex items-center space-x-2">
-              <Checkbox id="active_only" v-model:checked="filters.active_only" />
+              <Checkbox id="active_only" v-model="filters.active_only" />
               <Label for="active_only">Active only</Label>
             </div>
 
@@ -266,6 +266,24 @@ onMounted(() => {
 watch(isDialogOpen, (newValue) => {
   if (!newValue) {
     editingCategory.value = null;
+  }
+});
+
+// Keep the "Type" filter and the income/expense tabs in sync.
+// Selecting Income/Expense in the filter jumps to that tab; switching tabs
+// reflects back into the filter. "All Types" leaves the current tab as-is.
+watch(
+  () => filters.value.type,
+  (type) => {
+    if (type === 'income' || type === 'expense') {
+      activeTab.value = type;
+    }
+  }
+);
+
+watch(activeTab, (tab) => {
+  if (filters.value.type !== 'all') {
+    filters.value.type = tab;
   }
 });
 </script>
