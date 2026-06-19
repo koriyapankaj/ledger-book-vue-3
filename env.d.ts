@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_APP_ENV: 'development' | 'production' | 'test'
   readonly VITE_ENABLE_DEBUG: string
   readonly VITE_ENABLE_ERROR_REPORTING: string
+  readonly VITE_GOOGLE_CLIENT_ID: string
 }
 
 interface ImportMeta {

@@ -9,6 +9,7 @@ export type Environment = 'development' | 'production' | 'test';
 // Configuration interface
 export interface AppConfig {
   apiBaseUrl: string;
+  googleClientId: string;
   environment: Environment;
   isProduction: boolean;
   isDevelopment: boolean;
@@ -66,6 +67,7 @@ function createConfig(): AppConfig {
   
   return {
     apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+    googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
     environment,
     isProduction,
     isDevelopment,

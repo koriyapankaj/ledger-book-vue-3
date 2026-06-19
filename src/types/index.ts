@@ -2,6 +2,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  avatar?: string | null;
+  provider?: string | null;
   currency: string;
   timezone: string;
   is_active: boolean;

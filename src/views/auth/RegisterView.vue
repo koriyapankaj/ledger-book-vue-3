@@ -70,6 +70,18 @@
                         </div>
                     </Form>
 
+                    <div class="relative my-4">
+                        <div class="absolute inset-0 flex items-center">
+                            <span class="w-full border-t"></span>
+                        </div>
+                        <div class="relative flex justify-center text-xs uppercase">
+                            <span class="bg-card px-2 text-muted-foreground">Or continue with</span>
+                        </div>
+                    </div>
+
+                    <GoogleSignInButton text="signup_with" @credential="handleGoogleCredential"
+                        @error="handleGoogleError" />
+
                     <div class="mt-4 text-center text-sm">
                         Already have an account?
                         <router-link to="/login" class="text-primary hover:underline">
@@ -93,6 +105,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FormField } from '@/components/ui/form';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton.vue';
 import { useAuthStore } from '@/stores/auth';
 import type { RegisterData } from '@/types';
 
@@ -130,6 +143,20 @@ const handleRegister = async (values: any) => {
         // Error is already handled in the store
         console.error('Registration failed:', error);
     }
+};
+
+const handleGoogleCredential = async (idToken: string) => {
+    try {
+        authStore.clearErrors();
+        await authStore.loginWithGoogle(idToken);
+    } catch (error) {
+        // Error is already handled in the store
+        console.error('Google sign-in failed:', error);
+    }
+};
+
+const handleGoogleError = (message: string) => {
+    authStore.error = message;
 };
 
 onMounted(() => {

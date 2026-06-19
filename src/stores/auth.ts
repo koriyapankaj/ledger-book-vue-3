@@ -87,6 +87,36 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function loginWithGoogle(idToken: string) {
+    try {
+      loading.value = true;
+      error.value = null;
+      validationErrors.value = {};
+
+      const response = await authService.googleLogin(idToken);
+
+      token.value = response.token;
+      user.value = response.user;
+
+      localStorage.setItem(TOKEN_KEY, response.token);
+      localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+
+      router.push('/dashboard');
+    } catch (err: any) {
+      const apiError = err.response?.data as ApiError;
+
+      if (apiError?.errors) {
+        validationErrors.value = apiError.errors;
+        error.value = apiError.message || apiError.errors?.id_token?.[0] || 'Google sign-in failed';
+      } else {
+        error.value = apiError?.message || err.message || 'Google sign-in failed';
+      }
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function fetchUser() {
     try {
       loading.value = true;
@@ -134,6 +164,7 @@ export const useAuthStore = defineStore('auth', () => {
     initialize,
     login,
     register,
+    loginWithGoogle,
     fetchUser,
     logout,
     clearErrors,

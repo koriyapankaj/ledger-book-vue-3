@@ -1,6 +1,7 @@
 import { config } from '@/config/env.config';
 
 export const API_BASE_URL = config.apiBaseUrl;
+export const GOOGLE_CLIENT_ID = config.googleClientId;
 
 export const TOKEN_KEY = 'ledger_book_token';
 export const USER_KEY = 'ledger_book_user';
