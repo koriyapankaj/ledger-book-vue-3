@@ -41,7 +41,13 @@ export const useAuthStore = defineStore('auth', () => {
 
       router.push('/dashboard');
     } catch (err: any) {
-      const apiError = err.response?.data as ApiError;
+      const apiError = err.response?.data as ApiError & { requires_verification?: boolean; email?: string };
+
+      // Unverified email: send them to the verification screen with a fresh code.
+      if (err.response?.status === 403 && apiError?.requires_verification && apiError?.email) {
+        router.push({ path: '/verify-email', query: { email: apiError.email, resend: '1' } });
+        return;
+      }
 
       if (apiError?.errors) {
         // Laravel validation errors
@@ -64,13 +70,8 @@ export const useAuthStore = defineStore('auth', () => {
 
       const response = await authService.register(userData);
 
-      token.value = response.token;
-      user.value = response.user;
-
-      localStorage.setItem(TOKEN_KEY, response.token);
-      localStorage.setItem(USER_KEY, JSON.stringify(response.user));
-
-      router.push('/dashboard');
+      // Account starts unverified: no token is issued until the email is verified.
+      router.push({ path: '/verify-email', query: { email: response.email } });
     } catch (err: any) {
       const apiError = err.response?.data as ApiError;
 
@@ -115,6 +116,40 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       loading.value = false;
     }
+  }
+
+  async function verifyEmail(email: string, code: string) {
+    try {
+      loading.value = true;
+      error.value = null;
+      validationErrors.value = {};
+
+      const response = await authService.verifyEmailCode(email, code);
+
+      token.value = response.token;
+      user.value = response.user;
+
+      localStorage.setItem(TOKEN_KEY, response.token);
+      localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+
+      router.push('/dashboard');
+    } catch (err: any) {
+      const apiError = err.response?.data as ApiError;
+
+      if (apiError?.errors) {
+        validationErrors.value = apiError.errors;
+        error.value = apiError.message || apiError.errors?.code?.[0] || 'Verification failed';
+      } else {
+        error.value = apiError?.message || err.message || 'Verification failed';
+      }
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function resendVerificationCode(email: string) {
+    return authService.resendVerificationCode(email);
   }
 
   async function fetchUser() {
@@ -165,6 +200,8 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     loginWithGoogle,
+    verifyEmail,
+    resendVerificationCode,
     fetchUser,
     logout,
     clearErrors,

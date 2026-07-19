@@ -22,6 +22,12 @@ export interface AuthResponse {
   token: string;
 }
 
+export interface RegisterResponse {
+  message: string;
+  email: string;
+  requires_verification: boolean;
+}
+
 export interface LoginCredentials {
   email: string;
   password: string;
